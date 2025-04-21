@@ -1,8 +1,8 @@
+import autofix from "eslint-plugin-autofix";
 import eslint from "@eslint/js";
-import type { Linter } from "eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
-import prettier from "eslint-plugin-prettier";
 import globals from "globals";
+import prettier from "eslint-plugin-prettier";
 import tseslint from "typescript-eslint";
 
 export default [
@@ -23,6 +23,7 @@ export default [
     plugins: {
       typescriptEslint: tseslint.plugin,
       prettier,
+      autofix,
     },
     languageOptions: {
       globals: {
@@ -33,6 +34,8 @@ export default [
     },
     rules: {
       "prettier/prettier": "error",
+      "autofix/no-debugger": "error",
+      "@typescript-eslint/no-explicit-any": ["error", { ignoreRestArgs: true }],
     },
   },
-] satisfies Linter.Config[];
+];
