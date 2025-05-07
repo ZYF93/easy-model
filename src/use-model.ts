@@ -9,8 +9,8 @@ export function useModel<T extends new (...args: any[]) => InstanceType<T>>(
 ): InstanceType<T>;
 export function useModel<T extends new (...args: any[]) => InstanceType<T>>(
   Ctor: T,
-  args: null
-): Partial<InstanceType<T>>;
+  args: ConstructorParameters<T> | null
+): InstanceType<T> | Partial<InstanceType<T>>;
 export function useModel<T extends new (...args: any[]) => InstanceType<T>>(
   Ctor: T,
   args: ConstructorParameters<T> | null
