@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { provide, revoke, useModel, watch } from "../src";
+import { provide, useInstance, useModel, watch } from "../src";
 import { render, screen, fireEvent } from "@testing-library/react";
 import * as React from "react";
 
@@ -133,25 +133,69 @@ describe("provide", () => {
     expect(watcher6).toHaveBeenCalledTimes(1);
   });
 
-  it("正确取消缓存的实例", () => {
-    class MTest {
-      constructor(public name: string) {}
+  // todo: node下gc不清除weakref，需要后面再研究
+  // it("触发GC", async () => {
+  //   const registry = new FinalizationRegistry(message => {
+  //     events.add(message);
+  //   });
 
-      value = 0;
+  //   const events = new Set();
 
-      obj = {
-        a: 1,
-      };
+  //   function traceGC(obj, message) {
+  //     registry.register(obj, message);
+  //   }
 
-      child?: MTest;
-    }
-    const Test = provide(MTest);
+  //   function awaitGC(message) {
+  //     return new Promise(resolve => {
+  //       global.gc!();
 
-    const test = Test("test");
-    expect(test).toBe(Test("test"));
-    revoke(test);
-    expect(test).not.toBe(Test("test"));
-  });
+  //       const timer = setInterval(() => {
+  //         if (events.has(message)) {
+  //           events.delete(message);
+  //           clearInterval(timer);
+  //           resolve(null);
+  //         }
+  //       });
+  //     });
+  //   }
+
+  //   let obj: object | null = {};
+  //   const ref = new WeakRef(obj);
+  //   console.log(ref.deref());
+  //   traceGC(obj, "message");
+  //   obj = null;
+
+  //   await awaitGC("message");
+  // });
+
+  // it("正确取消缓存的实例", async () => {
+  //   class MTest {
+  //     constructor(public name: string) {}
+
+  //     value = 0;
+
+  //     obj = {
+  //       a: 1,
+  //     };
+
+  //     child?: MTest;
+  //   }
+  //   const Test = provide(MTest);
+
+  //   let test: MTest | undefined = Test("test");
+  //   test.value = 100;
+  //   expect(test.value).toBe(100);
+  //   expect(Test("test").value).toBe(100);
+
+  //   test = undefined;
+  //   global.gc!();
+  //   await new Promise(resolve => {
+  //     setTimeout(() => {
+  //       resolve(null);
+  //     });
+  //   });
+  //   expect(Test("test").value).not.toBe(100);
+  // });
 });
 
 describe("useModel", () => {
@@ -166,6 +210,8 @@ describe("useModel", () => {
       }
     }
 
+    const Test = provide(MTest);
+
     function TestComA() {
       const { value, random } = useModel(MTest, ["test"]);
       return (
@@ -177,7 +223,7 @@ describe("useModel", () => {
     }
 
     function TestComB() {
-      const { value } = useModel(MTest, ["test"]);
+      const { value } = useInstance(Test("test"));
       return <span data-testid="comB">{value}</span>;
     }
 

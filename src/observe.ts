@@ -10,7 +10,7 @@ const watchers = new WeakMap<object, Map<symbol, WatchCallback>>();
 const originSymbol = Symbol("origin");
 let triggerIngTargets: WeakSet<object> | null = null;
 const findMethods = ["includes", "indexOf", "lastIndexOf"];
-const unsafeCtors = [Promise, WeakMap, WeakSet, Map, Set];
+const unsafeCtors = [Promise, RegExp, Date, WeakMap, WeakSet, Map, Set];
 
 export function observe<T extends object>(target: T): T {
   target = getOrigin(target);

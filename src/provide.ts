@@ -1,10 +1,10 @@
 import { observe, safeGet } from "./observe";
 
 const InstanceSymbol = Symbol("instance");
-const instances = new Map();
-const instanceArgs = new WeakMap();
 const providers = new WeakMap();
 const provided = new WeakSet();
+const tokens = new WeakMap();
+const finalizationCallbacks = new WeakMap();
 
 export function provide<T extends new (...args: any[]) => InstanceType<T>>(
   ctor: T
@@ -51,13 +51,19 @@ export function provide<T extends new (...args: any[]) => InstanceType<T>>(
     }
   );
 
+  const instances = new Map();
+
+  const register = new FinalizationRegistry(
+    ({ args, token }: { args: unknown[]; token: object }) => {
+      revoke(instances, args);
+      finalizationCallbacks.get(token)?.();
+      register.unregister(token);
+    }
+  );
+
   const ret = new Proxy(ctor, {
     apply(target, _, args) {
-      if (!instances.has(ctor)) {
-        instances.set(ctor, new Map());
-      }
-
-      let map = instances.get(ctor);
+      let map = instances;
 
       for (let i = 0; i < args.length; i++) {
         if (!map.has(args[i])) {
@@ -66,14 +72,20 @@ export function provide<T extends new (...args: any[]) => InstanceType<T>>(
         map = map.get(args[i]);
       }
 
-      if (!map.has(InstanceSymbol)) {
+      if (
+        !map.has(InstanceSymbol) ||
+        (map.get(InstanceSymbol) !== undefined &&
+          !map.get(InstanceSymbol)?.deref?.())
+      ) {
         map.set(InstanceSymbol, undefined);
         const instance = observe(Reflect.construct(target, args, FakeCtor));
-        map.set(InstanceSymbol, instance);
-        instanceArgs.set(instance, args);
+        map.set(InstanceSymbol, new WeakRef(instance));
+        const token = {};
+        tokens.set(instance, token);
+        register.register(instance, { args, token }, token);
       }
 
-      return map.get(InstanceSymbol);
+      return map.get(InstanceSymbol)?.deref?.();
     },
   });
 
@@ -85,14 +97,28 @@ export function provide<T extends new (...args: any[]) => InstanceType<T>>(
   function FakeCtor() {}
 }
 
-export function revoke(model: object) {
-  const target = observe(model);
-  if (!instanceArgs.has(target)) return;
-  const args = instanceArgs.get(target);
-  let map = instances.get(target.constructor);
-  while (args.length) {
-    map = map.get(args.shift());
+function revoke(map: Map<unknown, unknown>, args: unknown[]) {
+  if (args.length === 0) return map.delete(InstanceSymbol);
+  const [key, ...rest] = args;
+  const nextMap = map.get(key);
+  if (nextMap instanceof Map) {
+    revoke(nextMap, rest);
+    if (nextMap.size > 0) return;
   }
-  map.delete(InstanceSymbol);
-  instanceArgs.delete(target);
+  return map.delete(key);
+}
+
+export function finalizationRegistry(model: object) {
+  const target = observe(model);
+  const token = tokens.get(target);
+  return {
+    register(callback: () => void) {
+      if (!token) return;
+      finalizationCallbacks.set(token, callback);
+    },
+    unregister() {
+      if (!token) return;
+      finalizationCallbacks.delete(token);
+    },
+  };
 }

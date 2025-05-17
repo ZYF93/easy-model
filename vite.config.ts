@@ -28,6 +28,14 @@ export default defineConfig({
     watch: false,
     setupFiles: "./test/setup.ts",
     environment: "jsdom",
+    poolOptions: {
+      threads: {
+        execArgv: ["--expose-gc"],
+      },
+      forks: {
+        execArgv: ["--expose-gc"],
+      },
+    },
   },
   resolve: {
     alias: {

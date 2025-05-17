@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { watch } from "./observe";
 import { provide } from "./provide";
 
@@ -17,12 +17,18 @@ export function useModel<T extends new (...args: any[]) => InstanceType<T>>(
 ): InstanceType<T> | Partial<InstanceType<T>> {
   const Provider = provide(Ctor);
   const model = args ? Provider(...args) : emptyObject;
+  return useInstance(model);
+}
+
+export function useInstance<T extends object>(model: T) {
+  const ref = useRef<T>(null);
+  if (ref.current !== model) ref.current = model;
   const [, forceUpdate] = useReducer(x => (x + 1) % 100, 0);
   useEffect(() => {
-    const unWatch = watch(model, () => {
+    const unWatch = watch(ref.current as object, () => {
       forceUpdate();
     });
     return unWatch;
-  }, [model]);
-  return model;
+  }, [ref.current]);
+  return ref.current;
 }
