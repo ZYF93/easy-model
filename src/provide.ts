@@ -80,8 +80,7 @@ export function provide<T extends new (...args: any[]) => InstanceType<T>>(
         map.set(InstanceSymbol, undefined);
         const instance = observe(Reflect.construct(target, args, FakeCtor));
         map.set(InstanceSymbol, new WeakRef(instance));
-        const token = {};
-        tokens.set(instance, token);
+        const token = getToken(instance);
         register.register(instance, { args, token }, token);
       }
 
@@ -110,7 +109,7 @@ function revoke(map: Map<unknown, unknown>, args: unknown[]) {
 
 export function finalizationRegistry(model: object) {
   const target = observe(model);
-  const token = tokens.get(target);
+  const token = getToken(target);
   return {
     register(callback: () => void) {
       if (!token) return;
@@ -121,4 +120,11 @@ export function finalizationRegistry(model: object) {
       finalizationCallbacks.delete(token);
     },
   };
+}
+
+function getToken(model: object) {
+  if (!tokens.has(model)) {
+    tokens.set(model, {});
+  }
+  return tokens.get(model);
 }

@@ -92,6 +92,10 @@ describe("provide", () => {
       };
 
       child?: MTest;
+
+      get child2() {
+        return Test("test3");
+      }
     }
     const Test = provide(MTest);
 
@@ -131,6 +135,20 @@ describe("provide", () => {
     handle6();
     expect(watcher5).toHaveBeenCalledTimes(1);
     expect(watcher6).toHaveBeenCalledTimes(1);
+
+    test.child = test;
+    const watcher7 = vi.fn();
+    const handle7 = watch(test, watcher7);
+    test.value = 5;
+    handle7();
+    expect(watcher7).toHaveBeenCalledTimes(1);
+
+    const watcher8 = vi.fn();
+    const handle8 = watch(test, watcher8);
+    console.log(test.child2);
+    Test("test3").value = 6;
+    handle8();
+    expect(watcher8).toBeCalledWith(["child2", "value"], 0, 6);
   });
 
   // todo: node下gc不清除weakref，需要后面再研究
