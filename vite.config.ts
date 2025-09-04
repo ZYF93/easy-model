@@ -16,10 +16,11 @@ export default defineConfig({
       fileName: format => `index.${format}.js`,
     },
     rollupOptions: {
-      external: ["react"],
+      external: ["react", "zod"],
       output: {
         globals: {
           react: "React",
+          zod: "Zod",
         },
       },
     },

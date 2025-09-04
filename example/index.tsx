@@ -1,11 +1,15 @@
+import { inject } from "@/ioc";
 import { finalizationRegistry, provide } from "@/provide";
+import { infer as Infer, number } from "zod";
 
 const { promise, resolve } = Promise.withResolvers();
 document.addEventListener("DOMContentLoaded", resolve);
 await promise;
 
+const schema = number();
 class MFoo {
-  bar = 1;
+  @inject(schema)
+  bar: Infer<typeof schema> = 1;
 }
 
 const Foo = provide(MFoo);
