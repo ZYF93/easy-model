@@ -1,4 +1,5 @@
 import { provide } from "./provide";
+import { useInstance } from "./use-model";
 
 type Fn = (...args: any[]) => unknown;
 type AsyncFn<T = unknown> = (...args: any[]) => Promise<T>;
@@ -94,3 +95,7 @@ class MLoader {
 }
 
 export const loader = provide(MLoader)();
+export const useLoader = () => {
+  const { isGlobalLoading, isLoading } = useInstance(loader);
+  return { isGlobalLoading, isLoading };
+};
