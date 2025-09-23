@@ -388,11 +388,13 @@ class UserModel {
   }
 }
 
+const User = provide(UserModel);
+
 class TeamModel {
   members: UserModel[] = [];
 
   addMember(userId: string) {
-    const user = provide(UserModel)(userId);
+    const user = User(userId);
     this.members.push(user);
   }
 
@@ -408,14 +410,14 @@ function TeamManagement() {
     <div>
       <h2>团队成员</h2>
       {team.members.map(member => (
-        <UserCard key={member.id} user={member} />
+        <UserCard key={member.id} id={member.id} />
       ))}
     </div>
   );
 }
 
-function UserCard({ user }: { user: UserModel }) {
-  const observedUser = useInstance(user);
+function UserCard({ id }: { id: UserModel["id"] }) {
+  const observedUser = useModel(User, [id]);
 
   return (
     <div>
@@ -432,16 +434,12 @@ function UserCard({ user }: { user: UserModel }) {
 function App() {
   return (
     <div>
-      {/* 开发环境配置 */}
       <Container namespace="dev">
         <VInjection schema={configSchema} val={devConfig} />
-        <DevTools />
       </Container>
 
-      {/* 生产环境配置 */}
       <Container namespace="prod">
         <VInjection schema={configSchema} val={prodConfig} />
-        <MainApp />
       </Container>
     </div>
   );
@@ -453,7 +451,6 @@ function App() {
 ### 1. 模型设计
 
 - **单一职责**: 每个模型类应该只负责一个特定的业务领域
-- **不可变更新**: 尽量使用不可变的方式更新状态
 - **类型安全**: 充分利用 TypeScript 的类型系统
 
 ```tsx
