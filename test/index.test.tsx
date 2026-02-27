@@ -1,5 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import { provide, useInstance, useModel, watch } from "../src";
+import {
+  provide,
+  useInstance,
+  useModel,
+  watch,
+  config,
+  Container,
+  CInjection,
+  VInjection,
+  inject,
+  isRegistered,
+} from "../src";
+import { object, number } from "zod";
 import { render, screen, fireEvent } from "@testing-library/react";
 import * as React from "react";
 
@@ -149,6 +161,64 @@ describe("provide", () => {
     Test("test3").value = 6;
     handle8();
     expect(watcher8).toBeCalledWith(["child2", "value"], 0, 6);
+  });
+
+  it("config 能够执行函数组件并注册注入", () => {
+    const schemaA = object({ a: number() }).describe("schemaA");
+    class A {
+      a = 1;
+    }
+
+    // 通过 config 传入 Container 将组件树执行一次
+    config(
+      <Container>
+        <CInjection schema={schemaA} ctor={A} />
+        <VInjection schema={schemaA} val={{ a: 42 }} />
+      </Container>
+    );
+
+    // 无论是构造函数还是值均应当被注册
+    expect(isRegistered(schemaA)).toBe(true);
+
+    // 验证 inject 装饰器能够正常工作
+    class B {
+      @inject(schemaA)
+      foo?: { a: number };
+    }
+    const b = provide(B)();
+    // 由于 value 注入优先，期待通过 val 获取值
+    expect(b.foo).toEqual({ a: 42 });
+  });
+
+  it("config 支持嵌套 Container 并正确隔离命名空间", () => {
+    const schemaA = object({ a: number() }).describe("schemaA");
+    const schemaB = object({ b: number() }).describe("schemaB");
+    class A {
+      a = 1;
+    }
+
+    config(
+      <>
+        <Container namespace="ns1">
+          <CInjection schema={schemaA} ctor={A} />
+        </Container>
+        <Container namespace="ns2">
+          <VInjection schema={schemaB} val={{ b: 7 }} />
+        </Container>
+      </>
+    );
+
+    expect(isRegistered(schemaA, "ns1")).toBe(true);
+    expect(isRegistered(schemaA, "ns2")).toBe(false);
+    expect(isRegistered(schemaB, "ns2")).toBe(true);
+    expect(isRegistered(schemaB, "ns1")).toBe(false);
+
+    class C {
+      @inject(schemaB, "ns2")
+      inner?: { b: number };
+    }
+    const c = provide(C)();
+    expect(c.inner).toEqual({ b: 7 });
   });
 
   // todo: node下gc不清除weakref，需要后面再研究

@@ -1,5 +1,5 @@
 import { provide } from "./provide";
-import { useInstance } from "./use-model";
+import { useInstance } from "./hooks";
 
 type Fn = (...args: any[]) => unknown;
 type AsyncFn<T = unknown> = (...args: any[]) => Promise<T>;

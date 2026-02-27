@@ -28,3 +28,7 @@ export function useInstance<T extends object>(model: T) {
   }, [model]);
   return model;
 }
+
+export function useWatcher(...args: Parameters<typeof watch>) {
+  useEffect(() => watch(...args), args);
+}

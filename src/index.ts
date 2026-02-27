@@ -1,6 +1,6 @@
 export { watch } from "./observe";
 export { provide, finalizationRegistry } from "./provide";
-export { useModel, useInstance } from "./use-model";
+export { useModel, useInstance, useWatcher } from "./hooks";
 export { loader, useLoader } from "./loader";
 export {
   Container,
@@ -9,4 +9,5 @@ export {
   inject,
   clearNamespace,
   isRegistered,
+  config,
 } from "./ioc";
