@@ -170,7 +170,42 @@ document.writeln(JSON.stringify(foo.qux));
 - React Context：
   - Context 适合简单传递，性能需配合 memo/selector 优化。easy-model 提供专门的 Hook 与内部优化，减少组件重新渲染并支持按需注入。
 
-总的来说，easy-model 的优势是“组合性与简单性”：把 DI、响应式与加载逻辑合并到一组直观的 API 中，适合需要少量样板、希望快速落地的 React 应用。
+总的来说，easy-model 的优势可以概括为：
+
+- **组合性强**：同一套模型既可以作为 React 状态容器，又可以作为依赖注入的服务，还可以挂载 loader / watch 等逻辑，减少在多个库之间来回穿梭。
+- **API 简单、一致**：以“类 + Hook”为中心（`useModel` / `useInstance`），不需要额外的 action、reducer 或复杂的装饰器配置，迁移成本低。
+- **性能可接受且易优化**：在典型的批量更新场景中，相比 Redux 有数量级的性能优势，同时通过内部的批量调度与轻量级响应式实现，保证在多数业务场景下不会成为性能瓶颈。
+- **渐进式引入友好**：无需改造全局 store，可以从单个模块/页面开始使用模型类和 Hook，逐步替换原有状态管理方案。
+
+### 简单 benchmark 结论
+
+项目在 `example/benchmark.tsx` 中提供了一个**粗略的**对比示例，核心场景为：
+
+- 初始化一个包含 10,000 个数字的数组；
+- 点击按钮后，对所有元素做 5 轮自增；
+- 使用 `performance.now()` 统计这段同步计算与状态写入时间（不计入 React 首屏渲染）。
+
+在一台常规开发机上的一次测试结果（单位：ms，取单次运行的代表值）大致如下：
+
+| 实现       | 耗时（ms） | 说明                                 |
+| ---------- | ---------- | ------------------------------------ |
+| easy-model | ≈ 3.1      | 基于类实例 + `observe` 的响应式模型 |
+| Redux      | ≈ 51.5     | `createSlice` + Immer 不可变更新     |
+| MobX       | ≈ 16.9     | `makeAutoObservable` + observer      |
+| Zustand    | ≈ 0.6      | 极简 store 函数实现                  |
+
+从这个场景可以得到几个结论（仅作趋势参考）：
+
+- **对比 Redux**：easy-model 在该批量场景中大约比 Redux 快一个数量级（\~3ms vs \~50ms），同时完全避免了 action / reducer 等模板代码，更新路径更直接。
+- **对比 MobX**：easy-model 与 MobX 属于同一数量级，前者以更简单的 Hook API + DI/loader 一体化为主打，后者在响应式生态上更成熟。
+- **对比 Zustand**：Zustand 在这个极简数组场景下可以做到非常小的开销；easy-model 并不以“单一场景下绝对最快”为目标，而是在保持性能可接受的前提下，提供更丰富的能力组合（依赖注入、loader、watch 等）。
+
+整体来说：
+
+- 在常见的批量更新场景里，**easy-model 相比 Redux 有明显的性能和开发体验优势**；
+- 与 MobX / Zustand 相比，easy-model 的优势更多体现在**组合能力与 API 一致性**：一套模型可以同时承担状态管理、依赖注入和异步加载，而不需要在多个库之间来回切换。
+
+> 说明：该 benchmark 仅为示例级别，不是严谨的基准测试。不同设备、浏览器和实现细节都会显著影响具体数值，建议按需 clone 仓库后自行在本地运行 `pnpm dev`，并在示例页面的 “Benchmark” 区块里手动对比。
 
 ---
 

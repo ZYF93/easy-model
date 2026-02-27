@@ -9,6 +9,7 @@ import {
   useLoader,
 } from "../src";
 import { useEffect, useState } from "react";
+import { BenchmarkApp } from "./benchmark";
 
 // 一个简单的 model 类，包含状态和方法
 class CounterModel {
@@ -177,6 +178,11 @@ function App() {
       <section id="loader" style={{ marginBottom: 32 }}>
         <h2>loader / useLoader 全局加载状态</h2>
         <LoaderDemo />
+      </section>
+
+      <section id="benchmark" style={{ marginBottom: 32 }}>
+        <h2>与 Redux / MobX / Zustand 的简单 benchmark 对比</h2>
+        <BenchmarkApp />
       </section>
     </div>
   );
