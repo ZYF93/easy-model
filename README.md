@@ -187,12 +187,12 @@ document.writeln(JSON.stringify(foo.qux));
 
 在一台常规开发机上的一次测试结果（单位：ms，取单次运行的代表值）大致如下：
 
-| 实现       | 耗时（ms） | 说明                                 |
-| ---------- | ---------- | ------------------------------------ |
+| 实现       | 耗时（ms） | 说明                                |
+| ---------- | ---------- | ----------------------------------- |
 | easy-model | ≈ 3.1      | 基于类实例 + `observe` 的响应式模型 |
-| Redux      | ≈ 51.5     | `createSlice` + Immer 不可变更新     |
-| MobX       | ≈ 16.9     | `makeAutoObservable` + observer      |
-| Zustand    | ≈ 0.6      | 极简 store 函数实现                  |
+| Redux      | ≈ 51.5     | `createSlice` + Immer 不可变更新    |
+| MobX       | ≈ 16.9     | `makeAutoObservable` + observer     |
+| Zustand    | ≈ 0.6      | 极简 store 函数实现                 |
 
 从这个场景可以得到几个结论（仅作趋势参考）：
 
