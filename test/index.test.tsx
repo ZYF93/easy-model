@@ -408,4 +408,36 @@ describe("hooks", () => {
       expect(screen.getByTestId("gl").textContent).toBe("false")
     );
   });
+
+  it("loader 的 isLoading 能反映单个方法的加载状态", async () => {
+    class M {
+      constructor(public name: string) {}
+      @loader.load(true)
+      async fetch() {
+        return new Promise<number>(resolve =>
+          setTimeout(() => resolve(42), 20)
+        );
+      }
+    }
+
+    const Prov = provide(M);
+
+    function Comp() {
+      const { isLoading } = useLoader();
+      const inst = useInstance(Prov("b"));
+      return <span data-testid="loading">{String(isLoading(inst.fetch))}</span>;
+    }
+
+    render(<Comp />);
+    const inst = Prov("b");
+    const p = inst.fetch();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("true")
+    );
+    await p;
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false")
+    );
+  });
 });
