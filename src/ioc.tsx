@@ -212,7 +212,7 @@ export function isRegistered<T extends ZodType>(
   const ctorContainer = ctorContainers[namespace];
   const valContainer = valContainers[namespace];
 
-  return ctorContainer?.has(schema) || valContainer?.has(schema);
+  return Boolean(ctorContainer?.has(schema) || valContainer?.has(schema));
 }
 
 const configFCs = [VInjection, CInjection];

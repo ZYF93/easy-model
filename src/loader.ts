@@ -1,5 +1,6 @@
 import { provide } from "./provide";
 import { useInstance } from "./hooks";
+import { withResolvers } from "./utils";
 
 type Fn = (...args: any[]) => unknown;
 type AsyncFn<T = unknown> = (...args: any[]) => Promise<T>;
@@ -45,7 +46,7 @@ class MLoader {
         const token = Token(fn, ...args);
         const isLoading = Boolean(loading[token.symbol]);
         if (isLoading) return loading[token.symbol][1];
-        const { promise, resolve, reject } = Promise.withResolvers();
+        const { promise, resolve, reject } = withResolvers();
         loading[token.symbol] = [fn, promise];
         if (isGlobal) addGlobalLoading();
         try {

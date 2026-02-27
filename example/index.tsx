@@ -1,55 +1,65 @@
-import { CInjection, config, Container, inject, VInjection } from "@/ioc";
-import { finalizationRegistry, provide } from "@/provide";
-import { infer as Infer, number, object } from "zod";
+import { createRoot } from "react-dom/client";
+import { useModel, useWatcher } from "../src";
+import { useState } from "react";
 
-const { promise, resolve } = Promise.withResolvers();
-document.addEventListener("DOMContentLoaded", resolve);
-await promise;
-
-const schema = object({
-  number: number(),
-}).describe("测试用schema");
-const schema2 = object({
-  xxx: number(),
-}).describe("Test类的schema");
-
-class Test {
-  xxx = 1;
-}
-class MFoo {
-  @inject(schema)
-  bar?: Infer<typeof schema>;
-  baz?: number;
-  @inject(schema2)
-  qux?: Infer<typeof schema2>;
+// 一个简单的 model 类，包含状态和方法
+class CounterModel {
+  count = 0;
+  label: string;
+  constructor(initial = 0, label = "计数器") {
+    this.count = initial;
+    this.label = label;
+  }
+  increment() {
+    this.count += 1;
+  }
+  decrement() {
+    this.count -= 1;
+  }
 }
 
-config(
-  <>
-    <Container>
-      <CInjection schema={schema2} ctor={Test} />
-      <VInjection
-        schema={schema}
-        val={{
-          number: 100,
-        }}
-      />
-    </Container>
-  </>
-);
+function Counter() {
+  // 使用 useModel 创建/注入 model 实例（会在 model 变更时触发组件更新）
+  const counter = useModel(CounterModel, [0, "示例"]);
+  const [changed, setChanged] = useState([
+    [] as (string | symbol)[],
+    0,
+    0,
+  ] as const);
 
-const Foo = provide(MFoo);
-let foo: MFoo | undefined = Foo();
-foo.baz = 20;
-document.writeln(JSON.stringify(foo.bar));
-document.writeln(String(foo.baz));
-document.writeln(JSON.stringify(foo.qux));
+  // useWatcher 用于对 model 的变化执行副作用（例如日志、同步到外部）
+  useWatcher(counter, (...args) => {
+    setChanged(args);
+  });
 
-foo = Foo();
-document.writeln(JSON.stringify(foo.bar));
-document.writeln(String(foo.baz));
-document.writeln(JSON.stringify(foo.qux));
-finalizationRegistry(foo).register(() => {
-  console.log("foo 被回收了");
-});
-foo = undefined;
+  return (
+    <div style={{ fontFamily: "sans-serif", padding: 20 }}>
+      <h2>{counter.label}</h2>
+      <div style={{ fontSize: 24, margin: "12px 0" }}>{counter.count}</div>
+      <div style={{ fontSize: 24, margin: "12px 0" }}>
+        <div>
+          counter changed {`->`} keys:{changed[0].join(",")}
+        </div>
+        <div>prev: {changed[1]}</div>
+        <div>current: {changed[2]}</div>
+      </div>
+      <button onClick={() => counter.decrement()}>-</button>
+      <button onClick={() => counter.increment()} style={{ marginLeft: 8 }}>
+        +
+      </button>
+    </div>
+  );
+}
+
+function App() {
+  const counter = useModel(CounterModel, [0, "示例"]);
+  return (
+    <div>
+      <h1>useModel、useWatcher 示例</h1>
+      <Counter />
+      <h2>{counter.count}</h2>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("app")!).render(<App />);

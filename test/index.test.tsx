@@ -10,12 +10,17 @@ import {
   VInjection,
   inject,
   isRegistered,
+  // added for extra tests
+  useWatcher,
+  loader,
+  useLoader,
+  clearNamespace,
 } from "../src";
 import { object, number } from "zod";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import * as React from "react";
 
-describe("provide", () => {
+describe("provide and IOC extras", () => {
   it("同样的参数获取同一个实例", () => {
     class MTest {
       constructor(public name: string) {}
@@ -221,6 +226,23 @@ describe("provide", () => {
     expect(c.inner).toEqual({ b: 7 });
   });
 
+  it("clearNamespace 能清理命名空间中的注册项", () => {
+    const schemaA = object({ a: number() }).describe("schemaClear");
+    class A {
+      a = 1;
+    }
+
+    config(
+      <Container namespace="ns_clear">
+        <CInjection schema={schemaA} ctor={A} />
+      </Container>
+    );
+
+    expect(isRegistered(schemaA, "ns_clear")).toBe(true);
+    clearNamespace("ns_clear");
+    expect(isRegistered(schemaA, "ns_clear")).toBe(false);
+  });
+
   // todo: node下gc不清除weakref，需要后面再研究
   // it("触发GC", async () => {
   //   const registry = new FinalizationRegistry(message => {
@@ -286,7 +308,7 @@ describe("provide", () => {
   // });
 });
 
-describe("useModel", () => {
+describe("hooks", () => {
   it("两个组件中通讯", () => {
     class MTest {
       constructor(public name: string) {}
@@ -332,5 +354,58 @@ describe("useModel", () => {
     expect(screen.getByTestId("comB")).toHaveTextContent(/^100$/);
 
     spy.mockRestore();
+  });
+
+  it("useWatcher 能在函数组件中监听模型变化", async () => {
+    class MTest {
+      constructor(public name: string) {}
+      value = 0;
+    }
+    const Test = provide(MTest);
+    const test = Test("uw");
+
+    const spy = vi.fn();
+
+    function Comp() {
+      useWatcher(test, spy);
+      const { value } = useInstance(test);
+      return <span data-testid="uw">{value}</span>;
+    }
+
+    render(<Comp />);
+    expect(screen.getByTestId("uw")).toHaveTextContent(/^0$/);
+    test.value = 7;
+    await waitFor(() => expect(spy).toHaveBeenCalled());
+  });
+
+  it("loader 和 useLoader 能反映全局加载状态", async () => {
+    class M {
+      @loader.load(true)
+      async fetch() {
+        return new Promise<number>(resolve =>
+          setTimeout(() => resolve(42), 20)
+        );
+      }
+    }
+
+    const Prov = provide(M);
+
+    function Comp() {
+      const { isGlobalLoading } = useLoader();
+      const inst = useInstance(Prov("a"));
+      return <span data-testid="gl">{String(isGlobalLoading)}</span>;
+    }
+
+    render(<Comp />);
+    const inst = Prov("a");
+    const p = inst.fetch();
+
+    await waitFor(() =>
+      expect(screen.getByTestId("gl").textContent).toBe("true")
+    );
+    await p;
+    await waitFor(() =>
+      expect(screen.getByTestId("gl").textContent).toBe("false")
+    );
   });
 });
