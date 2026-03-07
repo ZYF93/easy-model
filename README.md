@@ -1,233 +1,298 @@
 # easy-model
 
-轻量级的 React 状态管理与依赖注入库。
+**easy-model** 是一个围绕「类模型（Model Class）+ 依赖注入 + 精细化变更监听」构建的 React 状态管理与 IoC 工具集。你可以用普通的 TypeScript 类描述业务模型，通过少量 API 即可：
 
-easy-model 专注于在 React 中提供简洁、高效的状态管理，减少样板代码并保持良好的可组合性。
+- **在函数组件中直接创建 / 注入模型实例**（`useModel` / `useInstance`）
+- **跨组件共享同一实例**，支持按参数分组实例缓存（`provide`）
+- **监听模型及其嵌套属性的变化**（`watch` / `useWatcher`）
+- **用装饰器和 IoC 容器做依赖注入**（`Container` / `CInjection` / `VInjection` / `inject`）
+- **统一管理异步调用的加载状态**（`loader` / `useLoader`）
 
----
+相比 Redux / MobX / Zustand，easy-model 的目标是：**保持接近类 OOP 的心智模型，同时提供较好的性能和类型体验，并内建 IoC 能力。**
 
-## 特性
+### 核心特性一览
 
-- 极简 API：基于 Hook 的使用方式，易上手、易迁移。
-- 依赖注入：内置简单的容器，支持按类型/命名空间注入与清理。
-- 响应式观察：`watch` 支持对对象变化进行监听并触发更新。
-- Loader：统一的异步数据加载与缓存机制，搭配 `useLoader` 使用。
-- 体积小、无侵入：适合大中小型项目或逐步引入到现有项目中。
+- **类模型驱动（Class-based Model）**  
+  直接用 TypeScript 类描述业务：字段即状态，方法即业务逻辑，没有额外的 action / reducer ceremony。
 
----
+- **按参数缓存实例（Instance by arguments）**  
+  使用 `provide` 包装后，相同参数获取的是同一实例，不同参数获取不同实例，天然支持「按业务 key」分区的状态。
 
-## 安装
+- **深层变更监听（Deep watch）**  
+  `watch` / `useWatcher` 可以监听到：
+  - 模型自身字段的变化；
+  - 嵌套对象属性变化；
+  - 实例之间的嵌套 / 引用关系变化；
+  - getter 返回的衍生实例的变化。
 
-推荐使用 `pnpm`：
+- **React Hooks 友好**
+  - `useModel`：在组件中创建并订阅模型；
+  - `useInstance`：在组件中订阅已有实例；
+  - `useWatcher`：在函数组件中挂载监听回调；
+  - `useLoader`：统一获取全局 loading 状态及单个方法的 loading 状态。
 
-```bash
-pnpm add @e7w/easy-model
-```
+- **IoC 容器与依赖注入**
+  - 使用 `Container` / `CInjection` / `VInjection` / `config` 配置注入；
+  - 使用 `inject` 装饰器在类中按 schema 声明依赖；
+  - 支持 namespace 隔离与 `clearNamespace` 清理。
 
-或使用 `npm` / `yarn`：
+### 示例（example/）
 
-```bash
-npm install @e7w/easy-model
-yarn add @e7w/easy-model
-```
+`example/` 目录包含运行时示例，可帮助快速理解 API。下面是几个「直给」的核心用法片段。
 
-开发（安装依赖并运行测试）：
+- **基础计数器：`useModel` / `useWatcher`**（见 `example/index.tsx`）  
+  使用 `CounterModel` 展示如何在函数组件中创建模型实例、读取 / 更新字段，并监听变更：
 
-```bash
-pnpm install
-pnpm test
-```
+  ```tsx
+  import { useModel, useWatcher } from "easy-model";
 
-（如需启动示例项目，使用 Vite 的 `pnpm dev`，请参考 `package.json` 脚本。）
-
----
-
-## 快速上手（React）
-
-下面演示核心用法，适合在函数组件中使用：
-
-```tsx
-import React from "react";
-import {
-  provide,
-  useModel,
-  loader,
-  useLoader,
-  inject,
-  watch,
-} from "easy-model";
-
-class Counter {
-  count = 0;
-}
-
-// 组件中读取并响应模型变化
-function Counter() {
-  const model = useModel(Counter, []);
-  return (
-    <div>
-      <button onClick={() => model.count--}>-</button>
-      <span>{model.count}</span>
-      <button onClick={() => model.count++}>+</button>
-    </div>
-  );
-}
-
-// 异步 loader 示例
-class Photos {
-  @loader.load(true)
-  data = [];
-  async fetcher() {
-    const res = await fetch("/api/photos");
-    this.data = res.json();
+  class CounterModel {
+    count = 0;
+    label: string;
+    constructor(initial = 0, label = "计数器") {
+      this.count = initial;
+      this.label = label;
+    }
+    increment() {
+      this.count += 1;
+    }
+    decrement() {
+      this.count -= 1;
+    }
   }
-}
 
-function Gallery() {
-  const { data, fetcher } = useModel(Photos, []);
-  const { isGlobalLoading, isLoading } = useLoader();
-  useEffect(() => {
-    fetcher();
-  }, [fetcher]);
-  if (isGlobalLoading) return <div>全局loading</div>;
-  if (isLoading(fetcher)) return <div>本函数loading...</div>;
-  return (
-    <ul>
-      {data.map((p: any) => (
-        <li key={p.id}>{p.title}</li>
-      ))}
-    </ul>
-  );
-}
+  function Counter() {
+    const counter = useModel(CounterModel, [0, "示例"]);
 
-// 依赖注入示例（类/服务）
-const schema = object({
-  number: number(),
-}).describe("测试用schema");
-const schema2 = object({
-  xxx: number(),
-}).describe("Test类的schema");
+    useWatcher(counter, (keys, prev, next) => {
+      console.log("changed:", keys.join("."), prev, "->", next);
+    });
 
-class Test {
-  xxx = 1;
-}
-class MFoo {
-  @inject(schema)
-  bar?: Infer<typeof schema>;
-  baz?: number;
-  @inject(schema2)
-  qux?: Infer<typeof schema2>;
-}
+    return (
+      <div>
+        <h2>{counter.label}</h2>
+        <div>{counter.count}</div>
+        <button onClick={() => counter.decrement()}>-</button>
+        <button onClick={() => counter.increment()}>+</button>
+      </div>
+    );
+  }
+  ```
 
-config(
-  <>
+- **跨组件通信：`useModel` + `useInstance`**  
+  通过 `CommunicateModel` + `provide`，让多个组件共享同一实例（按参数分组）：
+
+  ```tsx
+  import { provide, useModel, useInstance } from "easy-model";
+
+  class CommunicateModel {
+    constructor(public name: string) {}
+    value = 0;
+    random() {
+      this.value = Math.random();
+    }
+  }
+
+  const CommunicateProvider = provide(CommunicateModel);
+
+  function CommunicateA() {
+    const { value, random } = useModel(CommunicateModel, ["channel"]);
+    return (
+      <div>
+        <span>组件 A：{value}</span>
+        <button onClick={random}>改变数值</button>
+      </div>
+    );
+  }
+
+  function CommunicateB() {
+    const { value } = useInstance(CommunicateProvider("channel"));
+    return <div>组件 B：{value}</div>;
+  }
+  ```
+
+- **独立监听：`watch`**  
+  在 React 外部或普通函数中监听某个实例，将变更记录到日志列表中：
+
+  ```tsx
+  import { provide, watch } from "easy-model";
+
+  class WatchModel {
+    constructor(public name: string) {}
+    value = 0;
+  }
+
+  const WatchProvider = provide(WatchModel);
+  const inst = WatchProvider("watch-demo");
+
+  const stop = watch(inst, (keys, prev, next) => {
+    console.log(`${keys.join(".")}: ${prev} -> ${next}`);
+  });
+
+  inst.value += 1;
+  // 不再需要时取消监听
+  stop();
+  ```
+
+- **异步加载与全局 Loading：`loader` / `useLoader`**  
+  通过装饰器标记异步方法，并在组件中读取全局 / 单方法 loading 状态：
+
+  ```tsx
+  import { loader, useLoader, useModel } from "easy-model";
+
+  class LoaderModel {
+    constructor(public name: string) {}
+
+    @loader.load(true)
+    async fetch() {
+      return new Promise<number>(resolve =>
+        setTimeout(() => resolve(42), 1000)
+      );
+    }
+  }
+
+  function LoaderDemo() {
+    const { isGlobalLoading, isLoading } = useLoader();
+    const inst = useModel(LoaderModel, ["loader-demo"]);
+
+    return (
+      <div>
+        <div>全局加载状态：{String(isGlobalLoading)}</div>
+        <div>当前加载状态：{String(isLoading(inst.fetch))}</div>
+        <button onClick={() => inst.fetch()} disabled={isGlobalLoading}>
+          触发一次异步加载
+        </button>
+      </div>
+    );
+  }
+  ```
+
+- **依赖注入示例：`example/inject.tsx`**  
+  展示了如何用 zod schema 描述依赖，并通过容器完成注入：
+
+  ```tsx
+  import {
+    CInjection,
+    Container,
+    VInjection,
+    config,
+    inject,
+  } from "easy-model";
+  import { object, number } from "zod";
+
+  const schema = object({ number: number() }).describe("测试用schema");
+
+  class Test {
+    xxx = 1;
+  }
+
+  class MFoo {
+    @inject(schema)
+    bar?: { number: number };
+    baz?: number;
+  }
+
+  config(
     <Container>
-      <CInjection schema={schema2} ctor={Test} />
-      <VInjection
-        schema={schema}
-        val={{
-          number: 100,
-        }}
-      />
+      <CInjection schema={schema} ctor={Test} />
+      <VInjection schema={schema} val={{ number: 100 }} />
     </Container>
-  </>
-);
+  );
+  ```
 
-const Foo = provide(MFoo);
-let foo: MFoo | undefined = Foo();
-foo.baz = 20;
-document.writeln(JSON.stringify(foo.bar));
-document.writeln(String(foo.baz));
-document.writeln(JSON.stringify(foo.qux));
-```
+- **Benchmark 示例：`example/benchmark.tsx`**  
+  提供 easy-model / Redux / MobX / Zustand 在同一场景下的**粗略性能对比面板**，下文有详细说明。
 
-更多示例见项目自带的 [example](example).
+### 测试（test/）
 
----
+`test/` 目录使用 Vitest + React Testing Library 覆盖了核心行为：
 
-## API（概览）
+- **provide 与实例缓存**
+  - 相同参数返回同一实例；
+  - 不同参数返回不同实例。
 
-- `watch` — 响应式监听函数。
-- `provide`, `finalizationRegistry` — 提供和清理模型/服务。
-- `useModel`, `useInstance`, `useWatcher` — React Hook，用于绑定模型或自定义观察者。
-- `loader`, `useLoader` — 异步加载器与 Hook。
-- `Container`, `CInjection`, `VInjection`, `inject`, `clearNamespace`, `isRegistered`, `config` — IoC/容器与注入相关工具。
+- **watch 的深层监听能力**
+  - 监听简单字段变更；
+  - 监听嵌套对象属性变更；
+  - 处理实例之间的嵌套引用关系；
+  - 支持 getter 返回实例（如 `child2`）的变更路径监听。
 
----
+- **IoC 配置与命名空间**
+  - 通过 `config` + `Container` + `CInjection` / `VInjection` 注册依赖；
+  - `isRegistered` 判断指定 schema 是否已在某个 namespace 注册；
+  - `clearNamespace` 清理命名空间中的注册项。
 
-## 与常见库对比（简要）
+- **Hooks 行为**
+  - `useModel` + `useInstance` 在两个组件间共享状态并同步更新 UI；
+  - `useWatcher` 在函数组件中监听模型变化；
+  - `loader` + `useLoader` 正确反映全局 / 单个方法的 loading 状态。
 
-- Redux：
-  - Redux 适合大型、严格的全局状态管理，具有强大的中间件生态，但模板代码较多（actions/reducers）。
-  - easy-model 更轻量，基于对象与 Hook，适合快速开发，整合 DI 和 loader，减少样板代码。
+### 与 Redux / MobX / Zustand 的对比
 
-- MobX：
-  - MobX 提供细粒度响应式，学习曲线较低。easy-model 提供类似的响应式监听器和 Hook，但 API 更显式，集成 DI 更方便。
+下表是从「心智模型 / 用法复杂度 / 性能 & 能力边界」等角度对比 easy-model 与常见方案：
 
-- Zustand：
-  - Zustand 也很小巧，以 store 函数为中心。easy-model 的优势在于：内建依赖注入、loader 管理与更直接的对象模型（常见类/实例注入更友好）。
+| 方案           | 编程模型                 | 典型心智负担                                                       | 内建 IoC / DI          | 性能特征（本项目场景）                  |
+| -------------- | ------------------------ | ------------------------------------------------------------------ | ---------------------- | --------------------------------------- |
+| **easy-model** | 类模型 + Hooks + IoC     | 写类 + 写方法即可，少量 API（`provide` / `useModel` / `watch` 等） | 是                     | 在极端批量更新下仍为**个位数毫秒**      |
+| **Redux**      | 不可变 state + reducer   | 需要 action / reducer / dispatch 等模板代码                        | 否                     | 在同场景下为**数十毫秒级**              |
+| **MobX**       | 可观察对象 + 装饰器      | 对响应式系统有一定学习成本，隐藏的依赖追踪                         | 否（偏响应式而非 IoC） | 性能优于 Redux，但仍是**十几毫秒级**    |
+| **Zustand**    | Hooks store + 函数式更新 | API 简洁，偏轻量，适合局部状态                                     | 否                     | 在本场景下是**最快**，但不提供 IoC 能力 |
 
-- React Context：
-  - Context 适合简单传递，性能需配合 memo/selector 优化。easy-model 提供专门的 Hook 与内部优化，减少组件重新渲染并支持按需注入。
+从项目角度看，easy-model 的特点在于：
 
-总的来说，easy-model 的优势可以概括为：
+- **对比 Redux**：
+  - 不需要拆分 action / reducer / selector，业务逻辑直接写在模型方法里；
+  - 避免大量模板代码，类型推断更直接（基于类字段和方法签名）；
+  - 自动处理实例缓存与变更订阅，无需手动 connect / useSelector。
 
-- **组合性强**：同一套模型既可以作为 React 状态容器，又可以作为依赖注入的服务，还可以挂载 loader / watch 等逻辑，减少在多个库之间来回穿梭。
-- **API 简单、一致**：以“类 + Hook”为中心（`useModel` / `useInstance`），不需要额外的 action、reducer 或复杂的装饰器配置，迁移成本低。
-- **性能可接受且易优化**：在典型的批量更新场景中，相比 Redux 有数量级的性能优势，同时通过内部的批量调度与轻量级响应式实现，保证在多数业务场景下不会成为性能瓶颈。
-- **渐进式引入友好**：无需改造全局 store，可以从单个模块/页面开始使用模型类和 Hook，逐步替换原有状态管理方案。
+- **对比 MobX**：
+  - 保留类模型的直觉优势，同时用显式 API（`watch` / `useWatcher`）暴露依赖关系；
+  - 依赖注入、命名空间、清理等能力是 easy-model 的一等公民，而非额外工具。
 
-### 简单 benchmark 结论
+- **对比 Zustand**：
+  - 性能接近（在本项目 benchmark 中 easy-model 仍处于个位数毫秒），但提供更完整的 IoC / DI / deep watch 组合能力；
+  - 更适合中大型、需要明确领域模型和依赖关系的项目，而不仅是「轻量局部状态 store」。
 
-项目在 `example/benchmark.tsx` 中提供了一个**粗略的**对比示例，核心场景为：
+### Benchmark 场景说明（与 Redux / MobX / Zustand 的粗略性能对比）
 
-- 初始化一个包含 10,000 个数字的数组；
-- 点击按钮后，对所有元素做 5 轮自增；
-- 使用 `performance.now()` 统计这段同步计算与状态写入时间（不计入 React 首屏渲染）。
+在 `example/benchmark.tsx` 中，项目提供了一个**简单且偏极端**的 benchmark，用来在同一台机器上粗略比较不同状态管理方案在「大量同步写入」场景下的表现。核心场景为：
 
-在一台常规开发机上的一次测试结果（单位：ms，取单次运行的代表值）大致如下：
+1. **初始化一个包含 10,000 个数字的数组**；
+2. 点击按钮后，对所有元素做 **5 轮自增**；
+3. 使用 `performance.now()` 统计这段**同步计算与状态写入**时间；
+4. **不计入 React 首屏渲染时间**，仅关注每次点击触发的计算 + 状态写入耗时。
 
-| 实现       | 耗时（ms） | 说明                                |
-| ---------- | ---------- | ----------------------------------- |
-| easy-model | ≈ 3.1      | 基于类实例 + `observe` 的响应式模型 |
-| Redux      | ≈ 51.5     | `createSlice` + Immer 不可变更新    |
-| MobX       | ≈ 16.9     | `makeAutoObservable` + observer     |
-| Zustand    | ≈ 0.6      | 极简 store 函数实现                 |
+在一台常规开发机上的一次测试结果（单位：ms，取单次运行的代表值）大致如下（数值可能因环境而异，仅供参考）：
 
-从这个场景可以得到几个结论（仅作趋势参考）：
+| 实现           | 耗时（ms） |
+| -------------- | ---------- |
+| **easy-model** | ≈ 3.1      |
+| **Redux**      | ≈ 51.5     |
+| **MobX**       | ≈ 16.9     |
+| **Zustand**    | ≈ 0.6      |
 
-- **对比 Redux**：easy-model 在该批量场景中大约比 Redux 快一个数量级（\~3ms vs \~50ms），同时完全避免了 action / reducer 等模板代码，更新路径更直接。
-- **对比 MobX**：easy-model 与 MobX 属于同一数量级，前者以更简单的 Hook API + DI/loader 一体化为主打，后者在响应式生态上更成熟。
-- **对比 Zustand**：Zustand 在这个极简数组场景下可以做到非常小的开销；easy-model 并不以“单一场景下绝对最快”为目标，而是在保持性能可接受的前提下，提供更丰富的能力组合（依赖注入、loader、watch 等）。
+需要特别强调：
 
-整体来说：
+- **这是一个刻意放大的「批量更新」场景**，主要目的是放大不同实现之间在「大量同步写入 + 通知」路径上的差异；
+- 结果会受到：浏览器 / Node 版本、硬件性能、打包模式等多种因素影响，因此这里只能作为**趋势性的参考**，而非严谨的性能报告；
+- Zustand 在这个场景下表现最好，这是符合其「极简 store + 函数式更新」定位的；
+- easy-model 虽然在这类极端场景下略慢于 Zustand，但**仍明显快于 Redux / MobX**，同时提供：
+  - 类模型 + IoC + 深度监听等高级能力；
+  - 更适合中大型业务的结构化编码体验。
 
-- 在常见的批量更新场景里，**easy-model 相比 Redux 有明显的性能和开发体验优势**；
-- 与 MobX / Zustand 相比，easy-model 的优势更多体现在**组合能力与 API 一致性**：一套模型可以同时承担状态管理、依赖注入和异步加载，而不需要在多个库之间来回切换。
+### 适用场景
 
-> 说明：该 benchmark 仅为示例级别，不是严谨的基准测试。不同设备、浏览器和实现细节都会显著影响具体数值，建议按需 clone 仓库后自行在本地运行 `pnpm dev`，并在示例页面的 “Benchmark” 区块里手动对比。
+easy-model 更适合以下类型的项目：
 
----
+- 领域模型清晰、希望用类来承载业务状态与方法；
+- 需要在各处优雅地做依赖注入（如仓储、服务、配置、schema 等）；
+- 对「监听某个模型 / 某个嵌套字段的变化」有较强需求；
+- 希望在保证结构化代码与可维护性的同时，获得接近轻量状态库的性能。
 
-## 开发 & 测试
+如果你目前在使用 Redux / MobX / Zustand，想要：
 
-运行测试：
+- 减少心智负担和模板代码；
+- 获得更自然的类模型与 IoC 能力；
+- 又不希望在性能上明显吃亏；
 
-```bash
-pnpm install
-pnpm test
-```
-
-查看示例：打开 `example/index.tsx` 并参考 `vite`/`npm` 脚本运行本地示例（一般为 `pnpm dev`）。
-
----
-
-## 贡献
-
-欢迎提交 issue 和 PR。请遵循项目的代码风格与测试约定。若要运行或修改示例，请先安装依赖并运行 `pnpm test` 验证现有用例。
-
----
-
-## 许可证
-
-MIT
+那么可以尝试将部分模块迁移到 easy-model，并先在 `example/benchmark.tsx` 中实际运行一次 benchmark，观察在你的机器和真实业务数据规模下的表现。
