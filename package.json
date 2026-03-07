@@ -1,12 +1,35 @@
 {
   "name": "@e7w/easy-model",
-  "version": "0.1.9",
+  "keywords": [
+    "react",
+    "state management",
+    "state manager",
+    "ioc",
+    "dependency injection",
+    "model",
+    "class model",
+    "react hooks",
+    "watcher",
+    "loader",
+    "typescript"
+  ],
+  "description": "一个基于类模型和依赖注入的 React 状态管理库。",
+  "version": "0.2.0",
   "module": "./dist/index.es.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZYF93/easy-model.git"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "type": "module",
+  "homepage": "https://github.com/ZYF93/easy-model#readme",
+  "bugs": {
+    "url": "https://github.com/ZYF93/easy-model/issues"
+  },
+  "author": "张一凡",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {

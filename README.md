@@ -280,6 +280,12 @@
   - 类模型 + IoC + 深度监听等高级能力；
   - 更适合中大型业务的结构化编码体验。
 
+### 项目链接与关键词
+
+- **GitHub 仓库**: [`ZYF93/easy-model`](https://github.com/ZYF93/easy-model)
+- **npm 包**: [`@e7w/easy-model`](https://www.npmjs.com/package/@e7w/easy-model)
+- **关键词**: `react` / `state management` / `state manager` / `ioc` / `dependency injection` / `class model` / `react hooks` / `watcher` / `loader` / `typescript`
+
 ### 适用场景
 
 easy-model 更适合以下类型的项目：
