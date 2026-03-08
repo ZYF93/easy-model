@@ -1,0 +1,133 @@
+easy-model 项目说明（面向 LLM）
+
+一、项目概览
+- 本仓库实现了一个轻量的 React 状态 / 模型层库，核心思想是：
+  - 使用「类（class）+ 实例」作为状态容器（model）。
+  - 通过 `provide` 构造可注入的实例工厂，再通过 `useModel` / `useInstance` 在组件中获取实例。
+  - 使用 `useWatcher` / `watch` 监听 model 上字段的变化，用于副作用或日志。
+  - 使用 `loader` / `useLoader` 统一管理异步加载与全局 loading 状态。
+
+二、核心概念与 API（来自当前源码）
+
+1. Model 类
+- 任何普通的 TypeScript/JavaScript class 均可作为 model。
+- 公共字段会被视为可观察状态，方法内部直接修改 `this.xxx` 即可触发订阅更新（通过库内部机制完成）。
+- 例（见 `example/index.tsx` 中的 `CounterModel`）：
+  - 字段：`count`, `label`
+  - 方法：`increment`, `decrement`，直接对字段自增/自减。
+
+2. provide
+- 用途：将一个 model 类包装成「带依赖注入能力的工厂」。
+- 使用方式（参考示例）：
+  - `const CommunicateProvider = provide(CommunicateModel);`
+  - 在组件中通过 `CommunicateProvider("channel")` 获取/创建对应 key 的实例。
+- 特点：
+  - 参数通常用于标识实例（如 name、channel 等），实现按 key 复用同一份 model。
+
+3. useModel
+- 用途：在 React 组件中创建/获取一个 model 实例，并在实例字段变化时触发组件重渲染。
+- 使用方式（见 `example/index.tsx`）：
+  - `const counter = useModel(CounterModel, [0, "示例"]);`
+  - `const inst = useModel(LoaderModel, ["loader-demo"]);`
+- 约定：
+  - 第二个参数是构造函数参数数组。
+  - 返回的就是 model 实例本身，可直接调用方法、读取字段。
+
+4. useInstance
+- 用途：在 React 组件中从 `provide` 出来的工厂获取已存在的实例。
+- 使用方式：
+  - `const { value } = useInstance(CommunicateProvider("channel"));`
+  - `const { isGlobalLoading, isLoading } = useInstance(loader);`（见 `src/loader.ts` 中导出的 `useLoader` 实现）
+- 场景：
+  - 不想重复构造 model，只想在多个组件间共享某一实例。
+
+5. useWatcher
+- 用途：在 React 组件内部注册一个对 model 变化的监听器，用于副作用逻辑。
+- 使用方式（见 `Counter` 组件）：
+  - `useWatcher(counter, (keys, prev, next) => { ... });`
+- 回调参数：
+  - `keys`: 变化路径数组（string | symbol）；
+  - `prev`: 上一次值；
+  - `next`: 当前值。
+
+6. watch
+- 用途：在 React 组件外部，或不依赖 hook 的场景下监听 model 变化。
+- 使用方式（见 `WatchDemo`）：
+  - `const stop = watch(inst, (keys, prev, next) => { ... });`
+  - 返回值一般是一个 `stop()` 函数，用于取消监听。
+- 典型用法：
+  - 在 `useEffect` 中注册，在清理函数中调用 `stop`。
+
+7. loader / useLoader（见 `src/loader.ts` 与 `example/index.tsx` 中的 `LoaderModel`）
+- `loader` 是一个通过 `provide(MLoader)()` 得到的全局单例，用于管理异步调用的 loading 状态。
+- `@loader.load(isGlobal?: boolean)`：
+  - 这是一个方法装饰器（TypeScript decorator）。
+  - 包装一个返回 Promise 的异步方法，自动处理：
+    - 针对相同方法+参数的并发调用复用同一 Promise（防止重复请求）。
+    - 在 `MLoader.loading` 中登记与清理 loading 标记。
+    - 根据 `isGlobal` 参数增减 `globalLoading` 计数。
+  - 示例（`LoaderModel`）：
+    - `@loader.load(true) async fetch() { ... }`
+- `useLoader()`：
+  - 实现见 `src/loader.ts` 末尾：
+    - `const { isGlobalLoading, isLoading } = useInstance(loader);`
+  - 在组件中使用：
+    - `const { isGlobalLoading, isLoading } = useLoader();`
+    - `isGlobalLoading`: 是否当前存在任意被标记为全局的异步加载；
+    - `isLoading(fn)`: 某个具体异步方法当前是否处于加载中。
+
+三、示例应用结构（example/index.tsx 概览）
+- `Counter`：
+  - 使用 `useModel` + `useWatcher` 实现基础计数器和变更日志。
+- `CommunicateA` / `CommunicateB`：
+  - 使用 `provide` + `useModel` / `useInstance` 演示跨组件共享同一 model 实例。
+- `WatchDemo`：
+  - 使用 `WatchProvider` + `watch` 演示在 hook 外监听 model 变化，并记录到本地 `log`。
+- `LoaderDemo`：
+  - 使用 `LoaderModel` + `@loader.load(true)` + `useLoader` 展示全局与局部 loading 状态。
+- `BenchmarkApp`：
+  - 提供与 Redux / MobX / Zustand 的简单基准对比（文件在 `example/benchmark` 相关代码中）。
+
+四、对后续修改的约定（给 LLM 的指导）
+1. 模型设计
+   - 优先使用 class 作为状态容器，将需要响应式的字段定义为实例属性。
+   - 方法内部可以直接修改 `this.xxx`，无需手动触发更新。
+   - 避免在构造函数中做重型副作用（如网络请求、定时器），更适合放在显式方法中并配合 `loader`。
+
+2. React 集成
+   - 在函数组件中获取/创建 model 时优先使用 `useModel`。
+   - 跨组件共享状态时优先使用 `useModel`。
+   - 需要共享实例时，使用 `provide(SomeModel)(...arguments)` 获取实例
+   - 需要在组件中直接使用实例时，通过provider获取实例，再结合 `useInstance`。
+   - 监听数据变化执行副作用时：
+     - 在组件内使用 `useWatcher`；
+     - 在组件外或更底层工具中使用 `watch`。
+
+3. 异步与 loading
+   - 为异步方法添加 loading 管理时，优先使用 `@loader.load(true/false)` 装饰器。
+   - UI 层通过 `useLoader()` 读取 `isGlobalLoading` 与 `isLoading` 来控制按钮禁用、显示 loading 文案等。
+   - 不要在组件中重复维护与 `loader` 重复的 loading 状态，避免状态源分裂。
+
+4. 代码风格与依赖
+   - 本库主要围绕 React hook 与 TypeScript 类型展开。
+   - 在扩展功能时，优先复用现有的 `provide` / `useModel` / `useInstance` / `useWatcher` / `watch` / `loader` 体系，而非引入新的全局状态管理库。
+
+五、当需要你（LLM）帮忙时，请优先考虑
+- 新增示例：放在 `example/` 下，参考现有 `Counter`、`WatchDemo`、`LoaderDemo` 的写法。
+- 修改核心行为：在 `src/` 下进行，务必保持向后兼容，避免破坏现有示例的运行。
+- 如果不确定某个变更会如何影响 loader 或 watcher 行为，优先在 `example/` 中添加/修改示例来验证再改动核心实现。
+
+六、docs/ 文档索引（避免在本文件重复维护）
+- 当用户咨询「最佳实践」「架构如何组织」「常见场景怎么写」「常见坑与排查」这类问题时，优先：
+  1）结合当前代码上下文给出简要答复；
+  2）同时显式引导用户前往 `docs/` 目录下对应文档获取更系统的说明，而不是在回答中完整复制那些文档的内容。
+
+目前 docs/ 下的核心文档有：
+- `docs/GUIDE.md`：整体使用与最佳实践总览；
+- `docs/ARCHITECTURE.md`：项目结构、分层与依赖方向建议；
+- `docs/COOKBOOK.md`：表单、列表、全局用户、通知、watcher 等具体场景的 Cookbook；
+- `docs/FAQ.md`：高频问题（如「字段变了不刷新」「watch vs useWatcher」「loader 用法」等）的集中解答。
+
+请你（LLM）在回答相关问题时：
+- 避免在本文件与回答中同时维护大段「架构说明 / 场景手册 / FAQ」的重复内容；
+- 多利用这些文档作为权威来源，通过简短概述 + 链接或路径提示的形式，引导用户自行查阅细节。

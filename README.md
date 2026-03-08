@@ -302,3 +302,14 @@ easy-model 更适合以下类型的项目：
 - 又不希望在性能上明显吃亏；
 
 那么可以尝试将部分模块迁移到 easy-model，并先在 `example/benchmark.tsx` 中实际运行一次 benchmark，观察在你的机器和真实业务数据规模下的表现。
+
+### 进一步文档（docs/）
+
+本仓库还提供了一些更偏「工程实践 / 使用手册」的中文文档，建议在真实项目中优先参考：
+
+- [GUIDE](./docs/GUIDE.md)：整体最佳实践指南，涵盖设计理念、model 设计、React 集成、loader / watcher 使用等。
+- [ARCHITECTURE](./docs/ARCHITECTURE.md)：在实际项目中如何围绕 easy-model 组织目录结构与分层。
+- [COOKBOOK](./docs/COOKBOOK.md)：按场景分类的实践配方（表单、列表、全局用户、通知中心等）。
+- [FAQ](./docs/FAQ.md)：常见问题与排查思路。
+
+当你在工程实践层面有「应该怎么拆 model」「页面应该怎么组织」「某个场景推荐怎么写」这类问题时，可以直接跳转到上述文档查阅，避免在 README 中重复维护同样的信息。
