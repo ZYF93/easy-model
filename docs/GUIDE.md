@@ -1,5 +1,7 @@
 ## easy-model 指南
 
+> [English Version / 英文版](./GUIDE.en.md)
+
 ---
 
 ## 1. 设计理念与适用场景

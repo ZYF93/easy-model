@@ -1,5 +1,7 @@
 ## easy-model 常见问题（FAQ）
 
+> [English Version / 英文版](./FAQ.en.md)
+
 本文整理了一些在使用 easy-model 过程中容易遇到的问题与建议解法，方便快速排查与沟通。
 
 ---

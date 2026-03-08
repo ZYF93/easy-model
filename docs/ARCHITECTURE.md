@@ -1,5 +1,7 @@
 ## easy-model 在项目中的架构实践
 
+> [English Version / 英文版](./ARCHITECTURE.en.md)
+
 本文说明在一个典型的 React / TypeScript 项目中，如何围绕 easy-model 组织代码结构与分层，让团队在中长期演进中保持可维护性。
 
 ---

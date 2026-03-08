@@ -1,5 +1,7 @@
 # easy-model
 
+> [English Version / 英文版说明](./README.en.md)
+
 **easy-model** 是一个围绕「类模型（Model Class）+ 依赖注入 + 精细化变更监听」构建的 React 状态管理与 IoC 工具集。你可以用普通的 TypeScript 类描述业务模型，通过少量 API 即可：
 
 - **在函数组件中直接创建 / 注入模型实例**（`useModel` / `useInstance`）

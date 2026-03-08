@@ -1,14 +1,12 @@
-## easy-model 场景 Cookbook
+## easy-model Scenario Cookbook
 
-> [English Version / 英文版](./COOKBOOK.en.md)
-
-本文以“场景配方”的形式，给出一些常见业务场景在 easy-model 下的实现思路与套路。示例均为伪代码级别，重点是模式而不是具体字段。
+This document provides "recipe‑style" patterns for common business scenarios implemented with easy-model. Examples are pseudo‑code level; the focus is on patterns rather than exact fields.
 
 ---
 
-## 1. 简单计数器（入门模板）
+## 1. Simple counter (getting started)
 
-### 1.1 Model 设计
+### 1.1 Model design
 
 ```ts
 class CounterModel {
@@ -24,7 +22,7 @@ class CounterModel {
 }
 ```
 
-### 1.2 组件使用
+### 1.2 Component usage
 
 ```tsx
 function Counter() {
@@ -40,17 +38,17 @@ function Counter() {
 }
 ```
 
-**要点：**
+**Key points:**
 
-- 从一开始就把逻辑写在 model 里，而不是 `useState`；后续要扩展（加上上限、统计、埋点）会更容易。
+- Put logic in the model from day one instead of `useState`; adding caps, stats, or tracking later becomes easier.
 
 ---
 
-## 2. 表单场景（本地校验 + 提交）
+## 2. Form scenario (local validation + submit)
 
-### 2.1 Model 设计
+### 2.1 Model design
 
-目标：一个简单登录表单，有用户名、密码、本地校验与提交。
+Goal: a simple login form with username, password, local validation, and submit.
 
 ```ts
 class LoginFormModel {
@@ -76,16 +74,16 @@ class LoginFormModel {
 
   async submit() {
     if (!this.isValid) {
-      this.setError("请检查用户名和密码");
+      this.setError("Please check username and password");
       return;
     }
-    // 调用服务层（伪代码）
+    // Call service layer (pseudo-code)
     // await authService.login({ username: this.username, password: this.password });
   }
 }
 ```
 
-### 2.2 组件使用
+### 2.2 Component usage
 
 ```tsx
 function LoginForm() {
@@ -108,27 +106,27 @@ function LoginForm() {
         onChange={e => form.changePassword(e.target.value)}
       />
 
-      {!form.isValid && <div>请完整填写表单</div>}
+      {!form.isValid && <div>Please complete the form</div>}
       {form.error && <div>{form.error}</div>}
 
-      <button type="submit">登录</button>
+      <button type="submit">Login</button>
     </form>
   );
 }
 ```
 
-**要点：**
+**Key points:**
 
-- 表单校验逻辑集中在 model 中，组件只负责展示错误信息和调用 `submit`。
-- 需要时可以在 `submit` 中加入埋点、重定向等逻辑，不会污染组件。
+- Form validation lives in the model; the component only displays errors and calls `submit`.
+- Add analytics, redirects, etc. in `submit` without polluting the component.
 
 ---
 
-## 3. 列表 + 筛选 + 分页
+## 3. List + filter + pagination
 
-### 3.1 Model 设计
+### 3.1 Model design
 
-典型的“表格页”场景：列表数据、筛选条件、分页信息。
+Typical "table page": list data, filters, pagination.
 
 ```ts
 interface ListItem {
@@ -158,7 +156,7 @@ class ListModel {
   }
 
   async load() {
-    // 伪代码：调用服务层
+    // Pseudo-code: call service layer
     // const res = await listService.query({
     //   page: this.page,
     //   pageSize: this.pageSize,
@@ -170,7 +168,7 @@ class ListModel {
 }
 ```
 
-### 3.2 组件使用
+### 3.2 Component usage
 
 ```tsx
 function ListPage() {
@@ -183,31 +181,31 @@ function ListPage() {
   return (
     <div>
       <input
-        placeholder="搜索关键字"
+        placeholder="Search keyword"
         value={list.keyword}
         onChange={e => list.changeKeyword(e.target.value)}
       />
 
-      {!list.hasData && <div>暂无数据</div>}
+      {!list.hasData && <div>No data</div>}
 
-      {/* 列表渲染略 */}
+      {/* Table rendering omitted */}
 
-      {/* 分页组件略，onChange 中调用 list.changePage */}
+      {/* Pagination component omitted; onChange calls list.changePage */}
     </div>
   );
 }
 ```
 
-**要点：**
+**Key points:**
 
-- 筛选条件、分页信息都集中在 model 中，组件只关心“当前状态”和“触发动作”。
-- 如果有多个页面需要相似的列表逻辑，可以通过继承或组合复用 `ListModel`。
+- Filters and pagination all live in the model; components focus on "current state + actions".
+- If multiple pages share similar logic, reuse `ListModel` via inheritance or composition.
 
 ---
 
-## 4. 全局用户信息与登录态
+## 4. Global user info & auth state
 
-### 4.1 Model 设计
+### 4.1 Model design
 
 ```ts
 class UserModel {
@@ -219,7 +217,7 @@ class UserModel {
   }
 
   async login(username: string, password: string) {
-    // 调用登录接口，伪代码
+    // Call login API (pseudo-code)
     // const { token } = await authService.login({ username, password });
     // this.token = token;
     // this.profile = await authService.fetchProfile();
@@ -232,13 +230,13 @@ class UserModel {
 }
 ```
 
-### 4.2 全局 Provider
+### 4.2 Global provider
 
 ```ts
 const UserProvider = provide(UserModel);
 ```
 
-### 4.3 在应用入口与页面中使用
+### 4.3 Usage in app entry & pages
 
 ```tsx
 function App() {
@@ -252,16 +250,16 @@ function App() {
 }
 ```
 
-**要点：**
+**Key points:**
 
-- 使用 `provide` + `useInstance` 创建一个全局用户实例，任何页面都可以拿到最新用户状态。
-- 所有和登录态相关的逻辑（token 管理、信息获取等）集中在 `UserModel` 中。
+- Use `provide` + `useInstance` to create a global user instance; all pages share the same auth state.
+- Keep all auth‑related logic (token management, fetching profile) in `UserModel`.
 
 ---
 
-## 5. 全局 loading 与按钮级 loading
+## 5. Global loading vs. button-level loading
 
-### 5.1 Model 中使用 loader
+### 5.1 Using loader in the model
 
 ```ts
 class ProfileModel {
@@ -269,13 +267,13 @@ class ProfileModel {
 
   @loader.load(true)
   async fetchProfile() {
-    // 伪代码
+    // Pseudo-code:
     // this.profile = await userService.fetchProfile();
   }
 }
 ```
 
-### 5.2 组件中使用 loading 状态
+### 5.2 Using loading state in components
 
 ```tsx
 function ProfilePage() {
@@ -290,10 +288,10 @@ function ProfilePage() {
 
   return (
     <div>
-      {isGlobalLoading && <div>全局加载中...</div>}
+      {isGlobalLoading && <div>Global loading...</div>}
 
       <button onClick={() => model.fetchProfile()} disabled={loadingCurrent}>
-        {loadingCurrent ? "加载中..." : "刷新资料"}
+        {loadingCurrent ? "Loading..." : "Refresh"}
       </button>
 
       {model.profile && <div>{model.profile.name}</div>}
@@ -302,16 +300,16 @@ function ProfilePage() {
 }
 ```
 
-**要点：**
+**Key points:**
 
-- `@loader.load(true)` 表示这个异步方法会影响全局 loading 状态。
-- `isGlobalLoading` 控制全局级 UI（遮罩、顶部进度条等），`isLoading(fn)` 控制局部 loading。
+- `@loader.load(true)` means the async method participates in global loading.
+- `isGlobalLoading` drives global UI (overlay, top bar), while `isLoading(fn)` drives local loading.
 
 ---
 
-## 6. 通知 / 消息中心
+## 6. Notification / message center
 
-### 6.1 Model 设计
+### 6.1 Model design
 
 ```ts
 interface Message {
@@ -337,7 +335,7 @@ class NotifyModel {
 }
 ```
 
-### 6.2 全局 Provider 与展示组件
+### 6.2 Global provider & display component
 
 ```ts
 const NotifyProvider = provide(NotifyModel);
@@ -353,7 +351,7 @@ function NotifyList() {
         <div key={m.id}>
           <span>[{m.type}] </span>
           <span>{m.text}</span>
-          <button onClick={() => notify.remove(m.id)}>关闭</button>
+          <button onClick={() => notify.remove(m.id)}>Close</button>
         </div>
       ))}
     </div>
@@ -361,23 +359,23 @@ function NotifyList() {
 }
 ```
 
-任何需要发通知的地方，只需要：
+Anywhere you need to send a notification:
 
 ```ts
 const notify = useInstance(NotifyProvider("global"));
-notify.push({ type: "success", text: "操作成功" });
+notify.push({ type: "success", text: "Operation succeeded" });
 ```
 
-**要点：**
+**Key points:**
 
-- 通知的展示与发起场景解耦，高度复用。
-- 通过 easy-model 保证所有通知都来自同一份 state。
+- Emission and display of notifications are decoupled and highly reusable.
+- easy-model ensures all notifications come from one centralized state.
 
 ---
 
-## 7. Watcher 场景：调试与埋点
+## 7. Watcher scenarios: debugging & analytics
 
-### 7.1 在组件内监听（`useWatcher`）
+### 7.1 Inside a component (`useWatcher`)
 
 ```tsx
 function DebugCounter() {
@@ -391,31 +389,32 @@ function DebugCounter() {
     ]);
   });
 
-  // 渲染 log 省略
+  // render log omitted
 }
 ```
 
-### 7.2 在组件外监听（`watch`）
+### 7.2 Outside components (`watch`)
 
 ```ts
 const counter = provide(CounterModel)();
 
 const stop = watch(counter, (keys, prev, next) => {
-  // 上报埋点或打印日志
+  // Send analytics or log
 });
 
-// 不再需要时调用 stop()
+// Call stop() when no longer needed
 stop();
 ```
 
-**要点：**
+**Key points:**
 
-- Watcher 更适合做“观测”和“记录”，尽量不要在回调里再修改同一个 model，避免逻辑难以追踪。
+- Watchers are best used for "observation" and "recording". Avoid modifying the same model in the callback to keep logic traceable.
 
 ---
 
-## 8. 使用建议小结
+## 8. Usage summary
 
-- **从场景出发设计 model**：先写 Story（这个页面/模块要做什么），再确定需要哪些字段和方法。
-- **组件只调用语义化方法**：`increase` / `submitForm` / `loadList`，尽量不要随意改内部字段。
-- **loader、watch、Provider 这些能力组合使用**，可以覆盖绝大多数中后台的典型需求，无需额外引入复杂状态管理方案。
+- **Design models from scenarios**: write a short story of what the page/module should do, then derive needed fields and methods.
+- **Components should call semantic methods only**: `increase`, `submitForm`, `loadList`, etc.; avoid directly mutating internal fields.
+- Combine **loader, watch, and providers** to cover most typical admin/dashboard requirements without extra complex state libraries.
+
