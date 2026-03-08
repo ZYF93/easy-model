@@ -309,4 +309,3 @@ function LoaderDemo() {
 - **Abstract business into models; keep components as pure views** — this is the key to easy-model’s maintainability.
 - **Use Hooks / Providers consistently** to work with models; avoid ad‑hoc `new` and manual lifecycle management.
 - Combine `loader`, `watch`, and DI to cover most state management needs in typical admin / dashboard projects without extra libraries.
-

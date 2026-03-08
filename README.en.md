@@ -1,5 +1,4 @@
-easy-model
-==========
+# easy-model
 
 **easy-model** is a React state management and IoC toolkit built around **Model Classes + Dependency Injection + Fine‑grained change watching**. With plain TypeScript classes that describe your business models, a small set of APIs lets you:
 
@@ -146,9 +145,7 @@ class LoaderModel {
 
   @loader.load(true)
   async fetch() {
-    return new Promise<number>(resolve =>
-      setTimeout(() => resolve(42), 1000)
-    );
+    return new Promise<number>(resolve => setTimeout(() => resolve(42), 1000));
   }
 }
 
@@ -172,13 +169,7 @@ function LoaderDemo() {
   Demonstrates how to describe dependencies with a zod schema and inject them via the container:
 
 ```tsx
-import {
-  CInjection,
-  Container,
-  VInjection,
-  config,
-  inject,
-} from "easy-model";
+import { CInjection, Container, VInjection, config, inject } from "easy-model";
 import { object, number } from "zod";
 
 const schema = object({ number: number() }).describe("schema for demo");
@@ -232,12 +223,12 @@ The `test/` directory uses Vitest + React Testing Library to cover core behavior
 
 The following table compares easy-model with popular libraries from the perspective of **mental model / complexity / performance & capability boundaries**:
 
-| Library        | Programming model             | Typical cognitive load                                                 | Built‑in IoC / DI      | Performance (in this repo's scenario)        |
-| -------------- | ----------------------------- | ---------------------------------------------------------------------- | ---------------------- | -------------------------------------------- |
-| **easy-model** | Class model + Hooks + IoC     | Write classes and methods, use a few APIs (`provide` / `useModel` / `watch` etc.) | Yes                    | Still **single‑digit milliseconds** in extreme bulk updates |
-| **Redux**      | Immutable state + reducers    | Requires actions / reducers / dispatch and lots of boilerplate         | No                     | **Tens of milliseconds** in the same scenario |
-| **MobX**       | Observable objects + decorators | Some learning cost about the reactive system and hidden dependency tracking | No (reactive but not IoC) | Faster than Redux, **teens of milliseconds** |
-| **Zustand**    | Hook store + functional updates | Simple API, lightweight, good for local state                          | No                     | **Fastest** in this particular scenario      |
+| Library        | Programming model               | Typical cognitive load                                                            | Built‑in IoC / DI         | Performance (in this repo's scenario)                       |
+| -------------- | ------------------------------- | --------------------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------- |
+| **easy-model** | Class model + Hooks + IoC       | Write classes and methods, use a few APIs (`provide` / `useModel` / `watch` etc.) | Yes                       | Still **single‑digit milliseconds** in extreme bulk updates |
+| **Redux**      | Immutable state + reducers      | Requires actions / reducers / dispatch and lots of boilerplate                    | No                        | **Tens of milliseconds** in the same scenario               |
+| **MobX**       | Observable objects + decorators | Some learning cost about the reactive system and hidden dependency tracking       | No (reactive but not IoC) | Faster than Redux, **teens of milliseconds**                |
+| **Zustand**    | Hook store + functional updates | Simple API, lightweight, good for local state                                     | No                        | **Fastest** in this particular scenario                     |
 
 From the project’s perspective, easy-model features:
 
@@ -265,12 +256,12 @@ In `example/benchmark.tsx`, the project includes a **simple yet extreme** benchm
 
 On a typical dev machine, one sample run (ms, single representative run) may look like:
 
-| Implementation  | Time (ms) |
-| --------------- | --------- |
-| **easy-model**  | ≈ 3.1     |
-| **Redux**       | ≈ 51.5    |
-| **MobX**        | ≈ 16.9    |
-| **Zustand**     | ≈ 0.6     |
+| Implementation | Time (ms) |
+| -------------- | --------- |
+| **easy-model** | ≈ 3.1     |
+| **Redux**      | ≈ 51.5    |
+| **MobX**       | ≈ 16.9    |
+| **Zustand**    | ≈ 0.6     |
 
 Important notes:
 
@@ -319,4 +310,3 @@ English versions of these docs are also available:
 - [ARCHITECTURE (EN)](./docs/ARCHITECTURE.en.md)
 - [COOKBOOK (EN)](./docs/COOKBOOK.en.md)
 - [FAQ (EN)](./docs/FAQ.en.md)
-

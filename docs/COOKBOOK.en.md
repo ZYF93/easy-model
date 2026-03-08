@@ -417,4 +417,3 @@ stop();
 - **Design models from scenarios**: write a short story of what the page/module should do, then derive needed fields and methods.
 - **Components should call semantic methods only**: `increase`, `submitForm`, `loadList`, etc.; avoid directly mutating internal fields.
 - Combine **loader, watch, and providers** to cover most typical admin/dashboard requirements without extra complex state libraries.
-

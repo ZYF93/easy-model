@@ -180,4 +180,3 @@ A typical model file can contain:
 - **Evolution strategy**
   - When migrating legacy projects, start by introducing easy-model in a single domain (e.g. user / login).
   - Build new feature modules following this architecture and dependency direction, avoiding a "mixed" architecture that becomes harder to maintain.
-
