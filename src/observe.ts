@@ -11,6 +11,27 @@ const originSymbol = Symbol("origin");
 let triggerIngTargets: WeakSet<object> | null = null;
 const findMethods = ["includes", "indexOf", "lastIndexOf"];
 const unsafeCtors = [Promise, RegExp, Date, WeakMap, WeakSet, Map, Set];
+const offWatchKeys = new WeakMap<object, (string | symbol)[]>();
+
+export function offWatch(
+  _: unknown,
+  { static: isStatic, kind, name }: ClassFieldDecoratorContext
+) {
+  if (kind !== "field") {
+    throw new Error("[observe] - offWatch 装饰器只能用于类的属性字段");
+  }
+  if (isStatic) {
+    throw new Error("[observe] - offWatch 装饰器不能用于静态属性");
+  }
+  return function <T>(this: object, initVal: T) {
+    const t = getOrigin(this);
+    if (!offWatchKeys.has(t)) {
+      offWatchKeys.set(t, [] as (string | symbol)[]);
+    }
+    offWatchKeys.get(t)!.push(name);
+    return initVal;
+  };
+}
 
 export function observe<T extends object>(target: T): T {
   target = getOrigin(target);
@@ -31,7 +52,11 @@ export function observe<T extends object>(target: T): T {
           cachedFns[p] = ret.bind(observe(t));
         }
         ret = cachedFns[p];
-      } else if (typeof ret === "object" && ret !== null) {
+      } else if (
+        typeof ret === "object" &&
+        ret !== null &&
+        !offWatchKeys.get(getOrigin(t))?.includes(p)
+      ) {
         if (!cachedUnWatch[p]) {
           cachedUnWatch[p] = watch(ret as object, createWatcher(target, p));
         }
@@ -40,6 +65,7 @@ export function observe<T extends object>(target: T): T {
       return ret;
     },
     set(t, p, nv, r) {
+      if (offWatchKeys.get(getOrigin(t))?.includes(p)) return true;
       let ov = Reflect.get(t, p, r);
       ov = getOrigin(ov);
       nv = getOrigin(nv);
@@ -75,7 +101,9 @@ export function observe<T extends object>(target: T): T {
         if (cachedFns[p]) {
           delete cachedFns[p];
         }
-        trigger(t, [p], ov, undefined);
+        if (!offWatchKeys.get(getOrigin(t))?.includes(p)) {
+          trigger(t, [p], ov, undefined);
+        }
       }
       return ret;
     },

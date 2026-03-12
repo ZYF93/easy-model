@@ -1,4 +1,4 @@
-export { watch } from "./observe";
+export { watch, offWatch } from "./observe";
 export { provide, finalizationRegistry } from "./provide";
 export { useModel, useInstance, useWatcher } from "./hooks";
 export { loader, useLoader } from "./loader";

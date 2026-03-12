@@ -10,6 +10,7 @@ import {
 } from "../src";
 import { useEffect, useState } from "react";
 import { BenchmarkApp } from "./benchmark";
+import "./inject";
 
 // 一个简单的 model 类，包含状态和方法
 class CounterModel {
