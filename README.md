@@ -136,6 +136,36 @@
   stop();
   ```
 
+- **跳过监听：`offWatch`**  
+  使用 `@offWatch` 装饰器跳过对特定字段的监听，以提高性能：
+
+  ```tsx
+  import { provide, watch, offWatch } from "easy-model";
+
+  class OffWatchModel {
+    constructor(public name: string) {}
+    value = 0;
+    @offWatch
+    internalCounter = 0;
+
+    increment() {
+      this.value += 1;
+      this.internalCounter += 1;
+    }
+  }
+
+  const OffWatchProvider = provide(OffWatchModel);
+  const inst = OffWatchProvider("offwatch-demo");
+
+  const stop = watch(inst, (keys, prev, next) => {
+    console.log(`${keys.join(".")}: ${prev} -> ${next}`);
+  });
+
+  inst.increment();
+  // 只输出 value 的变更，internalCounter 被跳过
+  stop();
+  ```
+
 - **异步加载与全局 Loading：`loader` / `useLoader`**  
   通过装饰器标记异步方法，并在组件中读取全局 / 单方法 loading 状态：
 

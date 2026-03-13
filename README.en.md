@@ -134,6 +134,36 @@ inst.value += 1;
 stop();
 ```
 
+- **Skip watching: `offWatch`**  
+  Use the `@offWatch` decorator to skip watching specific fields for better performance:
+
+```tsx
+import { provide, watch, offWatch } from "easy-model";
+
+class OffWatchModel {
+  constructor(public name: string) {}
+  value = 0;
+  @offWatch
+  internalCounter = 0;
+
+  increment() {
+    this.value += 1;
+    this.internalCounter += 1;
+  }
+}
+
+const OffWatchProvider = provide(OffWatchModel);
+const inst = OffWatchProvider("offwatch-demo");
+
+const stop = watch(inst, (keys, prev, next) => {
+  console.log(`${keys.join(".")}: ${prev} -> ${next}`);
+});
+
+inst.increment();
+// Only outputs value changes, internalCounter is skipped
+stop();
+```
+
 - **Async loading & global loading: `loader` / `useLoader`**  
   Decorate async methods and read global / per‑method loading states in components:
 

@@ -15,6 +15,7 @@ import {
   loader,
   useLoader,
   clearNamespace,
+  offWatch,
 } from "../src";
 import { object, number } from "zod";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -241,6 +242,31 @@ describe("provide and IOC extras", () => {
     expect(isRegistered(schemaA, "ns_clear")).toBe(true);
     clearNamespace("ns_clear");
     expect(isRegistered(schemaA, "ns_clear")).toBe(false);
+  });
+
+  it("offWatch 装饰器能跳过对特定字段的监听", () => {
+    class OffWatchTest {
+      constructor(public name: string) {}
+      value = 0;
+      @offWatch
+      internalCounter = 0;
+
+      increment() {
+        this.value += 1;
+        this.internalCounter += 1;
+      }
+    }
+    const Test = provide(OffWatchTest);
+
+    const test = Test("offwatch");
+    const watcher = vi.fn();
+    const handle = watch(test, watcher);
+
+    test.increment();
+
+    handle();
+    expect(watcher).toHaveBeenCalledTimes(1);
+    expect(watcher).toHaveBeenCalledWith(["value"], 0, 1);
   });
 
   // todo: node下gc不清除weakref，需要后面再研究

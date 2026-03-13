@@ -7,6 +7,7 @@ import {
   watch,
   loader,
   useLoader,
+  offWatch,
 } from "../src";
 import { useEffect, useState } from "react";
 import { BenchmarkApp } from "./benchmark";
@@ -140,6 +141,56 @@ class LoaderModel {
   }
 }
 
+class OffWatchModel {
+  constructor(public name: string) {}
+  value = 0;
+  @offWatch
+  internalCounter = 0;
+
+  increment() {
+    this.value += 1;
+    this.internalCounter += 1;
+  }
+}
+
+const OffWatchProvider = provide(OffWatchModel);
+
+function OffWatchDemo() {
+  const inst = OffWatchProvider("offwatch-demo");
+  const [log, setLog] = useState<string[]>([]);
+
+  useEffect(() => {
+    const stop = watch(inst, (keys, prev, next) => {
+      setLog(list => [
+        ...list,
+        `${keys.join(".")}: ${String(prev)} -> ${String(next)}`,
+      ]);
+    });
+    return stop;
+  }, [inst]);
+
+  return (
+    <div>
+      <div>公开值：{inst.value}</div>
+      <div>内部计数器：{inst.internalCounter}</div>
+      <button
+        onClick={() => {
+          inst.increment();
+        }}
+      >
+        增加（只监听 value）
+      </button>
+      <ul style={{ marginTop: 8 }}>
+        {log.map((item, idx) => (
+          <li key={idx} style={{ fontSize: 12 }}>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function LoaderDemo() {
   const { isGlobalLoading, isLoading } = useLoader();
   const inst = useModel(LoaderModel, ["loader-demo"]);
@@ -179,6 +230,11 @@ function App() {
       <section id="loader" style={{ marginBottom: 32 }}>
         <h2>loader / useLoader 全局加载状态</h2>
         <LoaderDemo />
+      </section>
+
+      <section id="offwatch" style={{ marginBottom: 32 }}>
+        <h2>offWatch 跳过监听示例</h2>
+        <OffWatchDemo />
       </section>
 
       <section id="benchmark" style={{ marginBottom: 32 }}>
