@@ -108,7 +108,7 @@
   }
 
   function CommunicateB() {
-    const { value } = useInstance(CommunicateProvider("channel"));
+    const { value } = useInstance(CommunicateProvider("channel")); // 这里用useModel也可以，这里是演示一下useInstance的使用方法
     return <div>组件 B：{value}</div>;
   }
   ```
