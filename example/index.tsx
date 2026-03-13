@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import { BenchmarkApp } from "./benchmark";
 import "./inject";
+import FormExample from "./form-example";
 
 // 一个简单的 model 类，包含状态和方法
 class CounterModel {
@@ -240,6 +241,10 @@ function App() {
       <section id="benchmark" style={{ marginBottom: 32 }}>
         <h2>与 Redux / MobX / Zustand 的简单 benchmark 对比</h2>
         <BenchmarkApp />
+      </section>
+
+      <section id="form" style={{ marginBottom: 32 }}>
+        <FormExample />
       </section>
     </div>
   );

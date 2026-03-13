@@ -151,7 +151,7 @@ function trigger(target: object, ...params: Parameters<WatchCallback>) {
   });
 }
 
-function getOrigin<T>(target: T): T {
+export function getOrigin<T>(target: T): T {
   if (typeof target !== "object" || target === null) return target;
   return (
     (target as Record<typeof originSymbol, T | undefined>)[originSymbol] ??

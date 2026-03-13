@@ -259,6 +259,123 @@
   - `useWatcher` 在函数组件中监听模型变化；
   - `loader` + `useLoader` 正确反映全局 / 单个方法的 loading 状态。
 
+### 表单工具（form-utils）
+
+easy-model 提供了基于装饰器的表单字段配置工具集，帮助你在模型类中声明式地定义表单字段的元信息（如验证规则、权限、依赖关系等），并通过 `getProps` 函数提取这些配置用于表单渲染。
+
+#### 核心 API
+
+- **装饰器链式调用**：所有装饰器支持链式调用，按需组合配置。
+  - `@forUtils.prop(name)`：设置字段的显示名称。
+  - `@forUtils.required()`：标记为必填字段。
+  - `@forUtils.validate(fn)`：设置验证函数，返回 `{ valid: boolean, message?: string }`。
+  - `@forUtils.readonly()`：标记为只读字段。
+  - `@forUtils.permission(code)`：设置权限代码。
+  - `@forUtils.dependsOn(fn)`：设置依赖条件函数，决定字段是否显示/启用。
+  - `@forUtils.config(fieldConfig)`：设置字段UI配置（如类型、宽度、选项等）。
+  - `@forUtils.placeholder(text)`：设置占位符文本。
+
+- **getProps(ctor)**：从类构造函数提取所有字段配置，返回配置数组。
+
+#### 示例用法
+
+```tsx
+import { forUtils } from "easy-model";
+
+// 定义表单模型
+class UserFormModel {
+  @(forUtils
+    .prop("用户名")
+    .required()
+    .validate(value => {
+      if (typeof value !== "string" || value.length < 3) {
+        return { valid: false, message: "用户名至少3个字符" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("请输入用户名"))
+  username = "";
+
+  @(forUtils
+    .prop("邮箱")
+    .required()
+    .validate(value => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return { valid: false, message: "请输入有效的邮箱地址" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" }))
+  email = "";
+
+  @(forUtils
+    .prop("年龄")
+    .validate(value => {
+      if (value < 0 || value > 120) {
+        return { valid: false, message: "年龄必须在0-120之间" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "50%" }))
+  age = 0;
+
+  @(forUtils.prop("管理员").config({ type: "checkbox", width: "auto" }))
+  isAdmin = false;
+
+  @(forUtils
+    .prop("管理员代码")
+    .dependsOn(function (this: UserFormModel) {
+      return this.isAdmin; // 仅在 isAdmin 为 true 时显示
+    })
+    .required()
+    .config({ type: "input", width: "100%" }))
+  adminCode = "";
+
+  @(forUtils
+    .prop("角色")
+    .permission(1)
+    .config({
+      type: "select",
+      width: "100%",
+      getOptions: () => ["user", "moderator", "admin"],
+    }))
+  role = "user";
+}
+
+// 获取表单配置
+const formProps = getProps(UserFormModel);
+
+// 在组件中使用
+function FormRenderer() {
+  return (
+    <form>
+      {formProps.map(field => (
+        <FormField key={field.name} config={field} />
+      ))}
+    </form>
+  );
+}
+```
+
+#### 字段配置类型
+
+`fieldConfig` 支持以下类型：
+
+- **input**: 文本输入框 `{ type: "input", width: string }`
+- **textarea**: 多行文本框 `{ type: "textarea", width: string }`
+- **select**: 下拉选择 `{ type: "select", width: string, getOptions(): string[] | Promise<string[]> }`
+- **checkbox**: 复选框 `{ type: "checkbox", width: string }`
+- **radio**: 单选框 `{ type: "radio", width: string, getOptions(): string[] | Promise<string[]> }`
+
+#### 测试覆盖
+
+- 装饰器正确设置字段属性（prop、required、validate 等）；
+- 链式调用按预期组合配置；
+- `dependsOn` 依赖条件函数正确执行；
+- `getProps` 正确提取所有字段配置。
+
 ### 与 Redux / MobX / Zustand 的对比
 
 下表是从「心智模型 / 用法复杂度 / 性能 & 能力边界」等角度对比 easy-model 与常见方案：

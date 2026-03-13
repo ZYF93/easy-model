@@ -2,51 +2,27 @@
 // @ts-ignore
 Symbol.metadata ??= Symbol.for("metadata");
 
-interface Field {
-  type: "input" | "textarea";
-  width: string;
-}
-
-interface Select {
-  type: "select";
-  width: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getOptions(): any[] | Promise<any[]>;
-}
-
-interface Checkbox {
-  type: "checkbox";
-  width: string;
-}
-
-interface Radio {
-  type: "radio";
-  width: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getOptions(): any[] | Promise<any[]>;
-}
-
-type FieldConfig = Field | Select | Checkbox | Radio;
-
-type FormProp = Record<
-  string | symbol,
-  {
-    prop: string;
-    validate(value: unknown): { valid: boolean; message?: string };
-    required: boolean;
-    readonly: boolean;
-    permission: number;
-    defaultValue?: unknown;
-    dependsOn(...args: any[]): boolean;
-    fieldConfig: FieldConfig;
-    placeholder?: string;
-  }
->;
+export type FormProp = {
+  prop: string;
+  validate(value: unknown): { valid: boolean; message?: string };
+  required: boolean;
+  readonly: boolean;
+  permission: number;
+  dependsOn(...args: any[]): boolean;
+  fieldConfig: {
+    type: "input" | "textarea" | "select" | "checkbox" | "radio";
+    width: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getOptions?(): any[] | Promise<any[]>;
+  };
+  placeholder?: string;
+  name: string | symbol;
+};
 
 const symbol = Symbol();
 
 function createUtils(
-  options: Omit<FormProp[""], "defaultValue"> = {
+  options: FormProp = {
     prop: "",
     validate: () => ({ valid: true }),
     readonly: false,
@@ -57,10 +33,11 @@ function createUtils(
       type: "input",
       width: "100%",
     },
+    name: "",
   }
 ) {
   function dec(
-    defaultValue: unknown,
+    _: unknown,
     { name, metadata, static: isStatic, kind }: ClassFieldDecoratorContext
   ) {
     if (kind !== "field") {
@@ -70,20 +47,21 @@ function createUtils(
       throw new Error("[form] - formUtils 相关装饰器不能用于静态属性");
     }
     metadata[symbol] ??= {};
-    return function <T>(initialValue: T) {
-      (metadata[symbol] as FormProp)[name] = {
-        ...options,
-        defaultValue: structuredClone(defaultValue),
-      };
-      return initialValue;
-    };
+    if ((metadata[symbol] as Record<string | symbol, FormProp>)[name]) {
+      Object.assign(
+        (metadata[symbol] as Record<string | symbol, FormProp>)[name],
+        options
+      );
+    } else {
+      (metadata[symbol] as Record<string | symbol, FormProp>)[name] = options;
+    }
   }
 
   return Object.assign(dec, {
     prop(name: string) {
       return createUtils({ ...options, prop: name });
     },
-    validate(validator: FormProp[""]["validate"]) {
+    validate(validator: FormProp["validate"]) {
       return createUtils({
         ...options,
         validate(value) {
@@ -102,13 +80,15 @@ function createUtils(
     permission(code: number) {
       return createUtils({ ...options, permission: code });
     },
-    dependsOn(fn: FormProp[""]["dependsOn"]) {
+    dependsOn(fn: FormProp["dependsOn"]) {
       return createUtils({
         ...options,
-        dependsOn: (...args) => options.dependsOn(...args) && fn(...args),
+        dependsOn(this, ...args) {
+          return options.dependsOn.apply(this, args) && fn.apply(this, args);
+        },
       });
     },
-    config(fieldConfig: FormProp[""]["fieldConfig"]) {
+    config(fieldConfig: FormProp["fieldConfig"]) {
       return createUtils({
         ...options,
         fieldConfig,
@@ -133,9 +113,12 @@ export const {
 
 export function getProps(ctor: new (...args: any[]) => unknown) {
   if (!ctor[Symbol.metadata]) return [];
-  const props = ctor[Symbol.metadata]![symbol] as FormProp;
-  return Object.keys(props || {}).map(name => ({
-    name,
+  const props = ctor[Symbol.metadata]![symbol] as Record<
+    string | symbol,
+    FormProp
+  >;
+  return Object.keys(props).map(name => ({
     ...props[name],
-  }));
+    name,
+  })) as FormProp[];
 }

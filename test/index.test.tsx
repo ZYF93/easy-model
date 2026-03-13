@@ -16,6 +16,7 @@ import {
   useLoader,
   clearNamespace,
   offWatch,
+  forUtils,
 } from "../src";
 import { object, number } from "zod";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -465,5 +466,99 @@ describe("hooks", () => {
     await waitFor(() =>
       expect(screen.getByTestId("loading").textContent).toBe("false")
     );
+  });
+});
+
+describe("form-utils", () => {
+  it("should create form props with decorators", () => {
+    class FormModel {
+      @(forUtils.prop("name").required())
+      name = "";
+
+      @(forUtils
+        .prop("age")
+        .validate(v =>
+          typeof v === "number"
+            ? { valid: true }
+            : { valid: false, message: "must be number" }
+        ))
+      age = 0;
+
+      @(forUtils.prop("email").readonly())
+      email = "";
+
+      @(forUtils.prop("role").permission(1))
+      role = "user";
+
+      @(forUtils.prop("description").placeholder("Enter description"))
+      description = "";
+    }
+
+    const props = forUtils.getProps(FormModel);
+
+    expect(props).toHaveLength(5);
+
+    const nameProp = props.find(p => p.name === "name");
+    expect(nameProp).toBeDefined();
+    expect(nameProp!.prop).toBe("name");
+    expect(nameProp!.required).toBe(true);
+    expect(nameProp!.readonly).toBe(false);
+
+    const ageProp = props.find(p => p.name === "age");
+    expect(ageProp).toBeDefined();
+    expect(ageProp!.validate(25)).toEqual({ valid: true });
+    expect(ageProp!.validate("25")).toEqual({
+      valid: false,
+      message: "must be number",
+    });
+
+    const emailProp = props.find(p => p.name === "email");
+    expect(emailProp!.readonly).toBe(true);
+
+    const roleProp = props.find(p => p.name === "role");
+    expect(roleProp!.permission).toBe(1);
+
+    const descProp = props.find(p => p.name === "description");
+    expect(descProp!.placeholder).toBe("Enter description");
+  });
+
+  it("should support dependsOn decorator", () => {
+    class FormModel {
+      @(forUtils.prop("isAdmin").required())
+      isAdmin = false;
+
+      @(forUtils.prop("adminCode").dependsOn(function (this: FormModel) {
+        return this.isAdmin;
+      }))
+      adminCode = "";
+    }
+
+    const props = forUtils.getProps(FormModel);
+    const adminCodeProp = props.find(p => p.name === "adminCode");
+    expect(adminCodeProp!.dependsOn.call({ isAdmin: true })).toBe(true);
+    expect(adminCodeProp!.dependsOn.call({ isAdmin: false })).toBe(false);
+  });
+
+  it("should support config decorator for field types", () => {
+    class FormModel {
+      @(forUtils.prop("username").config({ type: "input", width: "50%" }))
+      username = "";
+
+      @(forUtils.prop("gender").config({
+        type: "select",
+        width: "100%",
+        getOptions: () => ["male", "female"],
+      }))
+      gender = "";
+    }
+
+    const props = forUtils.getProps(FormModel);
+    const usernameProp = props.find(p => p.name === "username");
+    expect(usernameProp!.fieldConfig.type).toBe("input");
+    expect(usernameProp!.fieldConfig.width).toBe("50%");
+
+    const genderProp = props.find(p => p.name === "gender");
+    expect(genderProp!.fieldConfig.type).toBe("select");
+    expect(genderProp!.fieldConfig.getOptions?.()).toEqual(["male", "female"]);
   });
 });
