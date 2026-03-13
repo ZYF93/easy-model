@@ -217,7 +217,7 @@ function App() {
       </section>
 
       <section id="communication" style={{ marginBottom: 32 }}>
-        <h2>useInstance 跨组件通信</h2>
+        <h2>跨组件通信</h2>
         <CommunicateA />
         <CommunicateB />
       </section>

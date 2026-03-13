@@ -11,3 +11,5 @@ export {
   isRegistered,
   config,
 } from "./ioc";
+
+export * as forUtils from "./form-utils";
