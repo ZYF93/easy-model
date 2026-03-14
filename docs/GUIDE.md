@@ -312,3 +312,199 @@ function LoaderDemo() {
 - **抽象到 model，组件做纯视图**，是 easy-model 能够保持可维护性的关键。
 - **统一通过 Hook / Provider 使用 model**，避免在各处手写 `new` 和手动管理生命周期。
 - 善用 `loader`、`watch`、依赖注入等扩展能力，可以在不引入额外库的前提下完成绝大多数中后台项目的状态管理需求。
+
+---
+
+## 11. 表单工具（form-utils）
+
+easy-model 提供了基于装饰器的表单字段配置工具集，帮助你在模型类中声明式地定义表单字段的元信息（如验证规则、权限、依赖关系等），并通过 `forUtils.getProps` 函数提取这些配置用于表单渲染。
+
+### 11.1 核心装饰器
+
+- **`@forUtils.prop(name)`**：设置字段的显示名称。
+- **`@forUtils.required()`**：标记为必填字段。
+- **`@forUtils.validate(fn)`**：设置验证函数，返回 `{ valid: boolean; message?: string }`。
+- **`@forUtils.readonly()`**：标记为只读字段。
+- **`@forUtils.permission(code)`**：设置权限代码。
+- **`@forUtils.dependsOn(fn)`**：设置依赖条件函数，决定字段是否显示/启用。
+- **`@forUtils.config(fieldConfig)`**：设置字段UI配置（如类型、宽度、选项等）。
+- **`@forUtils.placeholder(text)`**：设置占位符文本。
+
+### 11.2 使用示例
+
+```ts
+import { forUtils } from "easy-model";
+
+class UserFormModel {
+  @(forUtils
+    .prop("用户名")
+    .required()
+    .validate(value => {
+      if (typeof value !== "string" || value.length < 3) {
+        return { valid: false, message: "用户名至少3个字符" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("请输入用户名"))
+  username = "";
+
+  @(forUtils
+    .prop("邮箱")
+    .required()
+    .validate(value => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (typeof value !== "string" || !emailRegex.test(value)) {
+        return { valid: false, message: "请输入有效的邮箱地址" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("请输入邮箱"))
+  email = "";
+
+  @(forUtils
+    .prop("年龄")
+    .validate(value => {
+      if (typeof value !== "number" || value < 0 || value > 120) {
+        return { valid: false, message: "年龄必须在0-120之间" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "50%" })
+    .placeholder("请输入年龄"))
+  age = 0;
+
+  @(forUtils.prop("管理员").config({ type: "checkbox", width: "auto" }))
+  isAdmin = false;
+
+  @(forUtils
+    .prop("管理员代码")
+    .dependsOn(function (this: UserFormModel) {
+      return this.isAdmin; // 仅在 isAdmin 为 true 时显示
+    })
+    .required()
+    .config({ type: "input", width: "100%" })
+    .placeholder("管理员代码"))
+  adminCode = "";
+
+  @(forUtils
+    .prop("角色")
+    .permission(1)
+    .config({
+      type: "select",
+      width: "100%",
+      getOptions: () => ["user", "moderator", "admin"],
+    }))
+  role = "user";
+
+  @(forUtils
+    .prop("描述")
+    .readonly()
+    .config({ type: "textarea", width: "100%" })
+    .placeholder("描述"))
+  description = "这是一个只读字段";
+}
+
+// 获取表单配置
+const formProps = forUtils.getProps(UserFormModel);
+```
+
+### 11.3 在组件中使用
+
+```tsx
+function FormRenderer() {
+  return (
+    <form>
+      {formProps.map(field => (
+        <FormField key={field.name} config={field} />
+      ))}
+    </form>
+  );
+}
+```
+
+### 11.4 最佳实践
+
+- **链式调用**：所有装饰器支持链式调用，按需组合配置。
+- **类型安全**：充分利用 TypeScript 的类型推断，避免运行时错误。
+- **依赖关系**：使用 `dependsOn` 处理字段间的依赖逻辑。
+- **权限控制**：通过 `permission` 实现字段级别的权限管理。
+
+---
+
+## 12. 历史记录管理（history）
+
+easy-model 提供了内置的历史记录管理功能，可以自动跟踪模型的变化，并支持撤销/重做操作。这对于需要撤销功能的表单、编辑器等场景非常有用。
+
+### 12.1 核心 API
+
+- **`collect(model)`**：为指定模型创建历史记录管理器实例。
+- **`useModelHistory(model)`**：React Hook，返回模型的历史管理器，方便在组件中使用。
+
+### 12.2 History 实例方法
+
+- **`hasPrev`**: boolean - 是否有前一步历史
+- **`hasNext`**: boolean - 是否有后一步历史
+- **`back()`**: 撤销到上一步
+- **`forward()`**: 重做到下一步
+- **`reset()`**: 重置到初始状态
+
+### 12.3 使用示例
+
+```tsx
+import { useModel, useModelHistory } from "easy-model";
+
+class CounterModel {
+  count = 0;
+  label = "计数器";
+
+  increment() {
+    this.count += 1;
+  }
+
+  decrement() {
+    this.count -= 1;
+  }
+}
+
+function HistoryDemo() {
+  const counter = useModel(CounterModel, []);
+  const history = useModelHistory(counter);
+
+  return (
+    <div>
+      <h2>
+        {counter.label}: {counter.count}
+      </h2>
+      <button onClick={() => counter.decrement()}>-</button>
+      <button onClick={() => counter.increment()}>+</button>
+
+      <div>
+        <button onClick={() => history.back()} disabled={!history.hasPrev}>
+          撤销
+        </button>
+        <button onClick={() => history.forward()} disabled={!history.hasNext}>
+          重做
+        </button>
+        <button onClick={() => history.reset()}>重置到初始状态</button>
+      </div>
+    </div>
+  );
+}
+```
+
+### 12.4 工作原理
+
+- 每次模型字段变化时，自动记录变更路径和值
+- `back()` 会将模型恢复到上一个状态
+- `forward()` 会前进到下一个记录的状态
+- `reset()` 会一次性恢复所有变更，回到初始状态
+- 支持嵌套对象的变更跟踪
+
+### 12.5 最佳实践
+
+- **用户体验**：在需要撤销功能的界面中提供撤销/重做按钮。
+- **性能考虑**：历史记录会占用内存，长时间运行的应用可以定期清理历史。
+- **边界处理**：在撤销/重做操作前后检查 `hasPrev`/`hasNext` 状态。
+- **组合使用**：可以与表单工具结合，为表单提供撤销功能。

@@ -412,8 +412,260 @@ stop();
 
 ---
 
-## 8. Usage summary
+## 8. Advanced forms (using form-utils)
+
+### 8.1 Model design
+
+Use decorators to define form field metadata, including validation, permissions, dependencies, etc.
+
+```ts
+import { forUtils } from "easy-model";
+
+class AdvancedFormModel {
+  @(forUtils
+    .prop("Username")
+    .required()
+    .validate(value => {
+      if (typeof value !== "string" || value.length < 3) {
+        return {
+          valid: false,
+          message: "Username must be at least 3 characters",
+        };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("Enter username"))
+  username = "";
+
+  @(forUtils
+    .prop("Email")
+    .required()
+    .validate(value => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (typeof value !== "string" || !emailRegex.test(value)) {
+        return { valid: false, message: "Please enter a valid email address" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("Enter email"))
+  email = "";
+
+  @(forUtils
+    .prop("Age")
+    .validate(value => {
+      if (typeof value !== "number" || value < 0 || value > 120) {
+        return { valid: false, message: "Age must be between 0 and 120" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "50%" })
+    .placeholder("Enter age"))
+  age = 0;
+
+  @(forUtils.prop("Admin").config({ type: "checkbox", width: "auto" }))
+  isAdmin = false;
+
+  @(forUtils
+    .prop("Admin Code")
+    .dependsOn(function (this: AdvancedFormModel) {
+      return this.isAdmin; // Only show when isAdmin is true
+    })
+    .required()
+    .config({ type: "input", width: "100%" })
+    .placeholder("Admin code"))
+  adminCode = "";
+
+  @(forUtils
+    .prop("Role")
+    .permission(1)
+    .config({
+      type: "select",
+      width: "100%",
+      getOptions: () => ["user", "moderator", "admin"],
+    }))
+  role = "user";
+
+  @(forUtils
+    .prop("Description")
+    .readonly()
+    .config({ type: "textarea", width: "100%" })
+    .placeholder("Description"))
+  description = "This is a read-only field";
+
+  // Get form configuration
+  static getFormProps() {
+    return forUtils.getProps(AdvancedFormModel);
+  }
+}
+```
+
+### 8.2 Component usage
+
+```tsx
+function AdvancedForm() {
+  const formProps = AdvancedFormModel.getFormProps();
+
+  return (
+    <form>
+      {formProps.map(field => (
+        <FormField key={field.name} config={field} />
+      ))}
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+
+function FormField({ config }: { config: any }) {
+  const {
+    name,
+    prop: label,
+    required,
+    readonly,
+    fieldConfig,
+    placeholder,
+    validate,
+  } = config;
+
+  const renderField = () => {
+    switch (fieldConfig.type) {
+      case "input":
+        return (
+          <input
+            name={name}
+            placeholder={placeholder}
+            readOnly={readonly}
+            style={{ width: fieldConfig.width }}
+          />
+        );
+      case "select":
+        return (
+          <select name={name} style={{ width: fieldConfig.width }}>
+            {fieldConfig.getOptions().map((option: string) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        );
+      case "checkbox":
+        return <input type="checkbox" name={name} />;
+      case "textarea":
+        return (
+          <textarea
+            name={name}
+            placeholder={placeholder}
+            readOnly={readonly}
+            style={{ width: fieldConfig.width }}
+          />
+        );
+      default:
+        return <div>Unsupported field type</div>;
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: "1rem" }}>
+      <label>
+        {label} {required && <span style={{ color: "red" }}>*</span>}
+      </label>
+      {renderField()}
+    </div>
+  );
+}
+```
+
+**Key points:**
+
+- Use decorators for declarative form configuration, making code more concise and type-safe.
+- `getProps` automatically extracts configuration for dynamic form rendering.
+- Combine with `dependsOn` to handle inter-field dependencies.
+- Ideal for complex forms, reducing manual validation and configuration code.
+
+---
+
+## 9. Undo functionality (using history)
+
+### 9.1 Model design
+
+Add history tracking to models that need undo functionality.
+
+```ts
+class EditableModel {
+  title = "Default Title";
+  content = "Default Content";
+
+  updateTitle(newTitle: string) {
+    this.title = newTitle;
+  }
+
+  updateContent(newContent: string) {
+    this.content = newContent;
+  }
+
+  reset() {
+    this.title = "Default Title";
+    this.content = "Default Content";
+  }
+}
+```
+
+### 9.2 Component usage
+
+```tsx
+function EditableComponent() {
+  const model = useModel(EditableModel, []);
+  const history = useModelHistory(model);
+
+  return (
+    <div>
+      <div>
+        <label>Title:</label>
+        <input
+          value={model.title}
+          onChange={e => model.updateTitle(e.target.value)}
+        />
+      </div>
+      <div>
+        <label>Content:</label>
+        <textarea
+          value={model.content}
+          onChange={e => model.updateContent(e.target.value)}
+        />
+      </div>
+
+      <div style={{ marginTop: "1rem" }}>
+        <button onClick={() => history.back()} disabled={!history.hasPrev}>
+          Undo
+        </button>
+        <button onClick={() => history.forward()} disabled={!history.hasNext}>
+          Redo
+        </button>
+        <button onClick={() => history.reset()}>Reset</button>
+        <button onClick={() => model.reset()}>Clear</button>
+      </div>
+
+      <div style={{ marginTop: "1rem", fontSize: "0.8em", color: "#666" }}>
+        Can undo: {history.hasPrev ? "Yes" : "No"} | Can redo:{" "}
+        {history.hasNext ? "Yes" : "No"}
+      </div>
+    </div>
+  );
+}
+```
+
+**Key points:**
+
+- `useModelHistory` provides undo/redo functionality for better user experience.
+- Suitable for text editors, form editing, and other scenarios requiring undo.
+- Automatically tracks all field changes, including nested objects.
+- Can be combined with form utilities to provide undo for forms.
+
+---
+
+## 10. Usage summary
 
 - **Design models from scenarios**: write a short story of what the page/module should do, then derive needed fields and methods.
 - **Components should call semantic methods only**: `increase`, `submitForm`, `loadList`, etc.; avoid directly mutating internal fields.
-- Combine **loader, watch, and providers** to cover most typical admin/dashboard requirements without extra complex state libraries.
+- Combine **loader, watch, form-utils, and history** to cover most typical admin/dashboard requirements without extra complex state libraries.

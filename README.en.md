@@ -239,6 +239,125 @@ The `test/` directory uses Vitest + React Testing Library to cover core behavior
   - Handle nested reference relationships between instances
   - Support getters returning instances (such as `child2`) with correct change paths
 
+### Form utilities (`form-utils`)
+
+easy-model provides a decorator-based form field metadata toolkit that helps you declare form field configuration (validation, permission, dependencies, etc.) directly on your model class and extract it via `getProps` for rendering.
+
+#### Core API
+
+- **`@forUtils.prop(name)`**: Sets the display name for the field.
+- **`@forUtils.required()`**: Marks the field as required.
+- **`@forUtils.validate(fn)`**: Provides a validation function returning `{ valid: boolean; message?: string }`.
+- **`@forUtils.readonly()`**: Marks the field as read-only.
+- **`@forUtils.permission(code)`**: Sets a permission code.
+- **`@forUtils.dependsOn(fn)`**: Sets a conditional function that controls whether the field is active.
+- **`@forUtils.config(fieldConfig)`**: Sets UI-related configuration (type, width, options, etc.).
+- **`@forUtils.placeholder(text)`**: Sets placeholder text.
+
+#### Example (form-utils)
+
+```tsx
+import { forUtils } from "easy-model";
+
+class UserFormModel {
+  @(forUtils
+    .prop("username")
+    .required()
+    .validate(value => {
+      if (typeof value !== "string" || value.length < 3) {
+        return {
+          valid: false,
+          message: "Username must be at least 3 characters",
+        };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("Enter username"))
+  username = "";
+
+  @(forUtils
+    .prop("email")
+    .required()
+    .validate(value => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(String(value))) {
+        return { valid: false, message: "Please enter a valid email" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("Enter email"))
+  email = "";
+
+  @(forUtils
+    .prop("role")
+    .permission(1)
+    .config({
+      type: "select",
+      width: "100%",
+      getOptions: () => ["user", "moderator", "admin"],
+    }))
+  role = "user";
+}
+
+const formProps = forUtils.getProps(UserFormModel);
+```
+
+### History tracking (`history`)
+
+easy-model includes a lightweight history tracker that records model changes and allows undo/redo/reset operations.
+
+#### Core API
+
+- **`collect(model)`**: Creates a history manager for a model instance.
+- **`useModelHistory(model)`**: React hook returning the history manager.
+
+#### History manager methods
+
+- `hasPrev`: whether there is a previous history entry
+- `hasNext`: whether there is a next history entry
+- `back()`: undo to the previous state
+- `forward()`: redo to the next state
+- `reset()`: restore the model to its initial state
+
+#### Example (history)
+
+```tsx
+import { useModel, useModelHistory } from "easy-model";
+
+class CounterModel {
+  count = 0;
+  increment() {
+    this.count += 1;
+  }
+  decrement() {
+    this.count -= 1;
+  }
+}
+
+function HistoryDemo() {
+  const counter = useModel(CounterModel, []);
+  const history = useModelHistory(counter);
+
+  return (
+    <div>
+      <div>{counter.count}</div>
+      <button onClick={() => counter.decrement()}>-</button>
+      <button onClick={() => counter.increment()}>+</button>
+
+      <button onClick={() => history.back()} disabled={!history.hasPrev}>
+        Undo
+      </button>
+      <button onClick={() => history.forward()} disabled={!history.hasNext}>
+        Redo
+      </button>
+      <button onClick={() => history.reset()}>Reset</button>
+    </div>
+  );
+}
+```
+
 - **IoC configuration and namespaces**
   - Register dependencies via `config` + `Container` + `CInjection` / `VInjection`
   - Use `isRegistered` to check whether a schema is registered in a namespace

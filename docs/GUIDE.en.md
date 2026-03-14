@@ -309,3 +309,195 @@ function LoaderDemo() {
 - **Abstract business into models; keep components as pure views** — this is the key to easy-model’s maintainability.
 - **Use Hooks / Providers consistently** to work with models; avoid ad‑hoc `new` and manual lifecycle management.
 - Combine `loader`, `watch`, and DI to cover most state management needs in typical admin / dashboard projects without extra libraries.
+
+---
+
+## 11. Form utilities (form-utils)
+
+easy-model provides a decorator-based form field metadata toolkit that helps you declare form field configuration (validation, permission, dependencies, etc.) directly on your model class and extract it via `forUtils.getProps` for rendering.
+
+### 11.1 Core decorators
+
+- **`@forUtils.prop(name)`**: Sets the display name for the field.
+- **`@forUtils.required()`**: Marks the field as required.
+- **`@forUtils.validate(fn)`**: Provides a validation function returning `{ valid: boolean; message?: string }`.
+- **`@forUtils.readonly()`**: Marks the field as read-only.
+- **`@forUtils.permission(code)`**: Sets a permission code.
+- **`@forUtils.dependsOn(fn)`**: Sets a conditional function that controls whether the field is active.
+- **`@forUtils.config(fieldConfig)`**: Sets UI-related configuration (type, width, options, etc.).
+- **`@forUtils.placeholder(text)`**: Sets placeholder text.
+
+### 11.2 Usage example
+
+```ts
+import { forUtils } from "easy-model";
+
+class UserFormModel {
+  @(forUtils
+    .prop("Username")
+    .required()
+    .validate(value => {
+      if (typeof value !== "string" || value.length < 3) {
+        return {
+          valid: false,
+          message: "Username must be at least 3 characters",
+        };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("Enter username"))
+  username = "";
+
+  @(forUtils
+    .prop("Email")
+    .required()
+    .validate(value => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (typeof value !== "string" || !emailRegex.test(value)) {
+        return { valid: false, message: "Please enter a valid email address" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("Enter email"))
+  email = "";
+
+  @(forUtils
+    .prop("Age")
+    .validate(value => {
+      if (typeof value !== "number" || value < 0 || value > 120) {
+        return { valid: false, message: "Age must be between 0 and 120" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "50%" })
+    .placeholder("Enter age"))
+  age = 0;
+
+  @(forUtils.prop("Admin").config({ type: "checkbox", width: "auto" }))
+  isAdmin = false;
+
+  @(forUtils
+    .prop("Admin Code")
+    .dependsOn(function (this: UserFormModel) {
+      return this.isAdmin; // Only show when isAdmin is true
+    })
+    .required()
+    .config({ type: "input", width: "100%" })
+    .placeholder("Admin code"))
+  adminCode = "";
+
+  @(forUtils
+    .prop("Role")
+    .permission(1)
+    .config({
+      type: "select",
+      width: "100%",
+      getOptions: () => ["user", "moderator", "admin"],
+    }))
+  role = "user";
+
+  @(forUtils
+    .prop("Description")
+    .readonly()
+    .config({ type: "textarea", width: "100%" })
+    .placeholder("Description"))
+  description = "This is a read-only field";
+}
+
+// Get form configuration
+const formProps = forUtils.getProps(UserFormModel);
+```
+
+### 11.3 Using in components
+
+```tsx
+function FormRenderer() {
+  return (
+    <form>
+      {formProps.map(field => (
+        <FormField key={field.name} config={field} />
+      ))}
+    </form>
+  );
+}
+```
+
+### 11.4 Best practices
+
+- **Chaining**: All decorators support chaining for flexible configuration.
+- **Type safety**: Leverage TypeScript's type inference to avoid runtime errors.
+- **Dependencies**: Use `dependsOn` to handle inter-field dependencies.
+- **Permission control**: Implement field-level permissions with `permission`.
+
+---
+
+## 12. History tracking (history)
+
+easy-model includes a lightweight history tracker that records model changes and allows undo/redo/reset operations.
+
+### 12.1 Core API
+
+- **`collect(model)`**: Creates a history manager for a model instance.
+- **`useModelHistory(model)`**: React hook returning the history manager.
+
+### 12.2 History manager methods
+
+- **`hasPrev`**: whether there is a previous history entry
+- **`hasNext`**: whether there is a next history entry
+- **`back()`**: undo to the previous state
+- **`forward()`**: redo to the next state
+- **`reset()`**: restore the model to its initial state
+
+### 12.3 Usage example
+
+```tsx
+import { useModel, useModelHistory } from "easy-model";
+
+class CounterModel {
+  count = 0;
+  increment() {
+    this.count += 1;
+  }
+  decrement() {
+    this.count -= 1;
+  }
+}
+
+function HistoryDemo() {
+  const counter = useModel(CounterModel, []);
+  const history = useModelHistory(counter);
+
+  return (
+    <div>
+      <div>{counter.count}</div>
+      <button onClick={() => counter.decrement()}>-</button>
+      <button onClick={() => counter.increment()}>+</button>
+
+      <button onClick={() => history.back()} disabled={!history.hasPrev}>
+        Undo
+      </button>
+      <button onClick={() => history.forward()} disabled={!history.hasNext}>
+        Redo
+      </button>
+      <button onClick={() => history.reset()}>Reset to initial state</button>
+    </div>
+  );
+}
+```
+
+### 12.4 How it works
+
+- Automatically records change paths and values on each model field change
+- `back()` restores the model to the previous state
+- `forward()` advances to the next recorded state
+- `reset()` restores all changes back to the initial state
+- Supports nested object change tracking
+
+### 12.5 Best practices
+
+- **User experience**: Provide undo/redo buttons in interfaces that need undo functionality.
+- **Performance**: History records consume memory; periodically clean history in long-running apps.
+- **Boundary handling**: Check `hasPrev`/`hasNext` states before undo/redo operations.
+- **Combined usage**: Can be combined with form utilities to provide undo functionality for forms.

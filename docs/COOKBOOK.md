@@ -414,8 +414,251 @@ stop();
 
 ---
 
-## 8. 使用建议小结
+## 8. 高级表单（使用 form-utils）
+
+### 8.1 Model 设计
+
+使用装饰器定义表单字段的元信息，包括验证、权限、依赖关系等。
+
+```ts
+import { forUtils } from "easy-model";
+
+class AdvancedFormModel {
+  @(forUtils。prop("用户名")
+    .required()
+    .validate(value => {
+      if (typeof value !== "string" || value.length < 3) {
+        return { valid: false, message: "用户名至少3个字符" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("请输入用户名"))
+  username = "";
+
+  @(forUtils.prop("邮箱")
+    .required()
+    .validate(value => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (typeof value !== "string" || !emailRegex.test(value)) {
+        return { valid: false, message: "请输入有效的邮箱地址" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "100%" })
+    .placeholder("请输入邮箱"))
+  email = "";
+
+  @(forUtils.prop("年龄")
+    .validate(value => {
+      if (typeof value !== "number" || value < 0 || value > 120) {
+        return { valid: false, message: "年龄必须在0-120之间" };
+      }
+      return { valid: true };
+    })
+    .config({ type: "input", width: "50%" })
+    .placeholder("请输入年龄"))
+  age = 0;
+
+  @(forUtils.prop("管理员").config({ type: "checkbox", width: "auto" }))
+  isAdmin = false;
+
+  @(forUtils.prop("管理员代码")
+    .dependsOn(function (this: AdvancedFormModel) {
+      return this.isAdmin; // 仅在 isAdmin 为 true 时显示
+    })
+    .required()
+    .config({ type: "input", width: "100%" })
+    .placeholder("管理员代码"))
+  adminCode = "";
+
+  @(forUtils.prop("角色")
+    .permission(1)
+    .config({
+      type: "select",
+      width: "100%",
+      getOptions: () => ["user", "moderator", "admin"],
+    }))
+  role = "user";
+
+  @(forUtils.prop("描述")
+    .readonly()
+    .config({ type: "textarea", width: "100%" })
+    .placeholder("描述"))
+  description = "这是一个只读字段";
+
+  // 获取表单配置
+  static getFormProps() {
+    return forUtils.getProps(AdvancedFormModel);
+  }
+}
+```
+
+### 8.2 组件使用
+
+```tsx
+function AdvancedForm() {
+  const formProps = AdvancedFormModel.getFormProps();
+
+  return (
+    <form>
+      {formProps.map(field => (
+        <FormField key={field.name} config={field} />
+      ))}
+      <button type="submit">提交</button>
+    </form>
+  );
+}
+
+function FormField({ config }: { config: any }) {
+  const {
+    name,
+    prop: label,
+    required,
+    readonly,
+    fieldConfig,
+    placeholder,
+    validate,
+  } = config;
+
+  const renderField = () => {
+    switch (fieldConfig.type) {
+      case "input":
+        return (
+          <input
+            name={name}
+            placeholder={placeholder}
+            readOnly={readonly}
+            style={{ width: fieldConfig.width }}
+          />
+        );
+      case "select":
+        return (
+          <select name={name} style={{ width: fieldConfig.width }}>
+            {fieldConfig.getOptions().map((option: string) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        );
+      case "checkbox":
+        return <input type="checkbox" name={name} />;
+      case "textarea":
+        return (
+          <textarea
+            name={name}
+            placeholder={placeholder}
+            readOnly={readonly}
+            style={{ width: fieldConfig.width }}
+          />
+        );
+      default:
+        return <div>Unsupported field type</div>;
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: "1rem" }}>
+      <label>
+        {label} {required && <span style={{ color: "red" }}>*</span>}
+      </label>
+      {renderField()}
+    </div>
+  );
+}
+```
+
+**要点：**
+
+- 使用装饰器声明式定义表单配置，代码更简洁且类型安全。
+- `getProps` 自动提取配置，支持动态表单渲染。
+- 结合 `dependsOn` 处理字段间的依赖关系。
+- 适合复杂表单场景，减少手动编写验证和配置代码。
+
+---
+
+## 9. 撤销功能（使用 history）
+
+### 9.1 Model 设计
+
+为需要撤销功能的 model 添加历史记录管理。
+
+```ts
+class EditableModel {
+  title = "默认标题";
+  content = "默认内容";
+
+  updateTitle(newTitle: string) {
+    this.title = newTitle;
+  }
+
+  updateContent(newContent: string) {
+    this.content = newContent;
+  }
+
+  reset() {
+    this.title = "默认标题";
+    this.content = "默认内容";
+  }
+}
+```
+
+### 9.2 组件使用
+
+```tsx
+function EditableComponent() {
+  const model = useModel(EditableModel, []);
+  const history = useModelHistory(model);
+
+  return (
+    <div>
+      <div>
+        <label>标题：</label>
+        <input
+          value={model.title}
+          onChange={e => model.updateTitle(e.target.value)}
+        />
+      </div>
+      <div>
+        <label>内容：</label>
+        <textarea
+          value={model.content}
+          onChange={e => model.updateContent(e.target.value)}
+        />
+      </div>
+
+      <div style={{ marginTop: "1rem" }}>
+        <button onClick={() => history.back()} disabled={!history.hasPrev}>
+          撤销
+        </button>
+        <button onClick={() => history.forward()} disabled={!history.hasNext}>
+          重做
+        </button>
+        <button onClick={() => history.reset()}>重置</button>
+        <button onClick={() => model.reset()}>清空</button>
+      </div>
+
+      <div style={{ marginTop: "1rem", fontSize: "0.8em", color: "#666" }}>
+        可以撤销: {history.hasPrev ? "是" : "否"} | 可以重做:{" "}
+        {history.hasNext ? "是" : "否"}
+      </div>
+    </div>
+  );
+}
+```
+
+**要点：**
+
+- `useModelHistory` 提供撤销/重做功能，提升用户体验。
+- 适合文本编辑器、表单编辑等需要撤销的场景。
+- 自动跟踪所有字段变化，支持嵌套对象。
+- 可以与表单工具结合，为表单提供撤销功能。
+
+---
+
+## 10. 使用建议小结
 
 - **从场景出发设计 model**：先写 Story（这个页面/模块要做什么），再确定需要哪些字段和方法。
 - **组件只调用语义化方法**：`increase` / `submitForm` / `loadList`，尽量不要随意改内部字段。
-- **loader、watch、Provider 这些能力组合使用**，可以覆盖绝大多数中后台的典型需求，无需额外引入复杂状态管理方案。
+- **loader、watch、form-utils、history 这些能力组合使用**，可以覆盖绝大多数中后台的典型需求，无需额外引入复杂状态管理方案。

@@ -345,7 +345,7 @@ class UserFormModel {
 }
 
 // 获取表单配置
-const formProps = getProps(UserFormModel);
+const formProps = forUtils.getProps(UserFormModel);
 
 // 在组件中使用
 function FormRenderer() {
