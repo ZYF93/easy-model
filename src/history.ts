@@ -10,7 +10,7 @@ interface HistoryItem {
   }[];
 }
 
-class History<T extends object> {
+export class History<T extends object> {
   @offWatch
   private model: T;
 
