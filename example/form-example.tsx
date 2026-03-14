@@ -93,7 +93,7 @@ function FormField({ prop }: { prop: forUtils.FormProp }) {
   }
   useEffect(() => {
     getOptions();
-  });
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<

@@ -17,6 +17,8 @@ import {
   clearNamespace,
   offWatch,
   forUtils,
+  useModelHistory,
+  collect,
 } from "../src";
 import { object, number } from "zod";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
@@ -560,5 +562,107 @@ describe("form-utils", () => {
     const genderProp = props.find(p => p.name === "gender");
     expect(genderProp!.fieldConfig.type).toBe("select");
     expect(genderProp!.fieldConfig.getOptions?.()).toEqual(["male", "female"]);
+  });
+});
+
+describe("history", () => {
+  it("should track changes and allow undo/redo", () => {
+    class TestModel {
+      value = 0;
+      name = "test";
+    }
+
+    const Test = provide(TestModel);
+    const model = Test();
+    const history = collect(model);
+
+    expect(history.hasPrev).toBe(false);
+    expect(history.hasNext).toBe(false);
+
+    model.value = 1;
+    expect(history.hasPrev).toBe(true);
+    expect(history.hasNext).toBe(false);
+
+    model.name = "changed";
+    expect(history.hasPrev).toBe(true);
+
+    history.back();
+    expect(model.name).toBe("test");
+    expect(history.hasPrev).toBe(true);
+    expect(history.hasNext).toBe(true);
+
+    history.back();
+    expect(model.value).toBe(0);
+    expect(history.hasPrev).toBe(false);
+    expect(history.hasNext).toBe(true);
+
+    history.forward();
+    expect(model.value).toBe(1);
+    expect(history.hasNext).toBe(true);
+
+    history.forward();
+    expect(model.name).toBe("changed");
+    expect(history.hasNext).toBe(false);
+  });
+
+  it("should reset to initial state", () => {
+    class TestModel {
+      value = 0;
+    }
+
+    const Test = provide(TestModel);
+    const model = Test();
+    const history = collect(model);
+
+    model.value = 1;
+    model.value = 2;
+    model.value = 3;
+
+    expect(model.value).toBe(3);
+    expect(history.hasPrev).toBe(true);
+
+    history.reset();
+    expect(model.value).toBe(0);
+    expect(history.hasPrev).toBe(false);
+  });
+
+  it("should handle nested object changes", () => {
+    class TestModel {
+      obj = { a: 1, b: 2 };
+    }
+
+    const Test = provide(TestModel);
+    const model = Test();
+    const history = collect(model);
+
+    model.obj.a = 10;
+    expect(history.hasPrev).toBe(true);
+
+    history.back();
+    expect(model.obj.a).toBe(1);
+  });
+
+  it("useModelHistory should work with useModel", () => {
+    class TestModel {
+      value = 0;
+    }
+
+    let model: any;
+    let history: any;
+    function TestComp() {
+      model = useModel(TestModel, []);
+      history = useModelHistory(model);
+      return <div>test</div>;
+    }
+
+    render(<TestComp />);
+
+    expect(history.hasPrev).toBe(false);
+
+    model.value = 1;
+    expect(history.hasPrev).toBe(true);
+
+    history.back();
+    expect(model.value).toBe(0);
   });
 });

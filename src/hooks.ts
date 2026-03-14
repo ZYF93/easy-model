@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from "react";
 import { watch } from "./observe";
 import { provide } from "./provide";
+import { collect } from "./history";
 
 const emptyObject = Object.create(null);
 export function useModel<T extends new (...args: any[]) => InstanceType<T>>(
@@ -31,4 +32,8 @@ export function useInstance<T extends object>(model: T) {
 
 export function useWatcher(...args: Parameters<typeof watch>) {
   useEffect(() => watch(...args), args);
+}
+
+export function useModelHistory<T extends object>(model: T) {
+  return useModel(collect, [model]);
 }

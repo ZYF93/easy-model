@@ -34,6 +34,7 @@ export default [
     },
     rules: {
       "prettier/prettier": "error",
+      // "no-debugger": false,
       "autofix/no-debugger": "error",
       "@typescript-eslint/no-explicit-any": ["error", { ignoreRestArgs: true }],
       "@typescript-eslint/no-unused-vars": [

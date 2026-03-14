@@ -376,6 +376,82 @@ function FormRenderer() {
 - `dependsOn` 依赖条件函数正确执行；
 - `getProps` 正确提取所有字段配置。
 
+### 历史记录管理（history）
+
+easy-model 提供了内置的历史记录管理功能，可以自动跟踪模型的变化，并支持撤销/重做操作。这对于需要撤销功能的表单、编辑器等场景非常有用。
+
+#### 核心 API
+
+- **collect(model)**：为指定模型创建历史记录管理器实例。
+- **useModelHistory(model)**：React Hook，返回模型的历史管理器，方便在组件中使用。
+
+#### History 实例方法
+
+- **hasPrev**: boolean - 是否有前一步历史
+- **hasNext**: boolean - 是否有后一步历史
+- **back()**: 撤销到上一步
+- **forward()**: 重做到下一步
+- **reset()**: 重置到初始状态
+
+#### 示例用法
+
+```tsx
+import { useModel, useModelHistory } from "easy-model";
+
+class CounterModel {
+  count = 0;
+  label = "计数器";
+
+  increment() {
+    this.count += 1;
+  }
+
+  decrement() {
+    this.count -= 1;
+  }
+}
+
+function HistoryDemo() {
+  const counter = useModel(CounterModel, []);
+  const history = useModelHistory(counter);
+
+  return (
+    <div>
+      <h2>
+        {counter.label}: {counter.count}
+      </h2>
+      <button onClick={() => counter.increment()}>+</button>
+      <button onClick={() => counter.decrement()}>-</button>
+
+      <div>
+        <button onClick={() => history.back()} disabled={!history.hasPrev}>
+          撤销
+        </button>
+        <button onClick={() => history.forward()} disabled={!history.hasNext}>
+          重做
+        </button>
+        <button onClick={() => history.reset()}>重置</button>
+      </div>
+    </div>
+  );
+}
+```
+
+#### 工作原理
+
+- 每次模型字段变化时，自动记录变更路径和值
+- `back()` 会将模型恢复到上一个状态
+- `forward()` 会前进到下一个记录的状态
+- `reset()` 会一次性恢复所有变更，回到初始状态
+- 支持嵌套对象的变更跟踪
+
+#### 测试覆盖
+
+- 基础的撤销/重做功能
+- 重置到初始状态
+- 嵌套对象变更的处理
+- 与 useModel 的集成
+
 ### 与 Redux / MobX / Zustand 的对比
 
 下表是从「心智模型 / 用法复杂度 / 性能 & 能力边界」等角度对比 easy-model 与常见方案：

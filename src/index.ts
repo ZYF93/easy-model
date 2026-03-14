@@ -13,3 +13,6 @@ export {
 } from "./ioc";
 
 export * as forUtils from "./form-utils";
+
+export { useModelHistory } from "./hooks";
+export { collect } from "./history";

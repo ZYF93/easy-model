@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { BenchmarkApp } from "./benchmark";
 import "./inject";
 import FormExample from "./form-example";
+import HistoryExample from "./history-example";
 
 // 一个简单的 model 类，包含状态和方法
 class CounterModel {
@@ -245,6 +246,10 @@ function App() {
 
       <section id="form" style={{ marginBottom: 32 }}>
         <FormExample />
+      </section>
+
+      <section id="history" style={{ marginBottom: 32 }}>
+        <HistoryExample />
       </section>
     </div>
   );
