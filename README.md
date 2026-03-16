@@ -392,6 +392,7 @@ easy-model 提供了内置的历史记录管理功能，可以自动跟踪模型
 - **back()**: 撤销到上一步
 - **forward()**: 重做到下一步
 - **reset()**: 重置到初始状态
+- **clear()**: 清空历史记录
 
 #### 示例用法
 
@@ -431,6 +432,7 @@ function HistoryDemo() {
           重做
         </button>
         <button onClick={() => history.reset()}>重置</button>
+        <button onClick={() => history.clear()}>清空历史</button>
       </div>
     </div>
   );
@@ -443,11 +445,14 @@ function HistoryDemo() {
 - `back()` 会将模型恢复到上一个状态
 - `forward()` 会前进到下一个记录的状态
 - `reset()` 会一次性恢复所有变更，回到初始状态
+- `clear()` 会清空所有历史记录，无法再撤销或重做
 - 支持嵌套对象的变更跟踪
 
 #### 测试覆盖
 
 - 基础的撤销/重做功能
+- 重置到初始状态
+- 清空历史记录
 - 重置到初始状态
 - 嵌套对象变更的处理
 - 与 useModel 的集成

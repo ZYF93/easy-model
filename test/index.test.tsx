@@ -421,7 +421,7 @@ describe("hooks", () => {
 
     function Comp() {
       const { isGlobalLoading } = useLoader();
-      const inst = useInstance(Prov("a"));
+      const _inst = useInstance(Prov("a"));
       return <span data-testid="gl">{String(isGlobalLoading)}</span>;
     }
 
@@ -626,6 +626,25 @@ describe("history", () => {
     expect(history.hasPrev).toBe(false);
   });
 
+  it("should clear history", () => {
+    class TestModel {
+      value = 0;
+    }
+
+    const Test = provide(TestModel);
+    const model = Test();
+    const history = collect(model);
+
+    model.value = 1;
+    model.value = 2;
+
+    expect(history.hasPrev).toBe(true);
+
+    history.clear();
+    expect(history.hasPrev).toBe(false);
+    expect(history.hasNext).toBe(false);
+  });
+
   it("should handle nested object changes", () => {
     class TestModel {
       obj = { a: 1, b: 2 };
@@ -647,8 +666,8 @@ describe("history", () => {
       value = 0;
     }
 
-    let model: any;
-    let history: any;
+    let model: TestModel;
+    let history: ReturnType<typeof useModelHistory>;
     function TestComp() {
       model = useModel(TestModel, []);
       history = useModelHistory(model);

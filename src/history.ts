@@ -86,6 +86,13 @@ export class History<T extends object> {
     this.current = { data: [] };
     this.setValue(data.flat());
   }
+
+  /**
+   * 清空历史记录
+   */
+  clear() {
+    this.current = { data: [] };
+  }
 }
 
 export const collect = provide(History);

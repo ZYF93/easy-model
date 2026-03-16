@@ -65,7 +65,13 @@ export default function HistoryExample() {
           >
             重做
           </button>
-          <button onClick={() => history.reset()}>重置到初始状态</button>
+          <button
+            onClick={() => history.reset()}
+            style={{ marginRight: "0.5rem" }}
+          >
+            重置到初始状态
+          </button>
+          <button onClick={() => history.clear()}>清空历史</button>
         </div>
         <div style={{ marginTop: "0.5rem" }}>
           <span>可以撤销: {history.hasPrev ? "是" : "否"}</span>
@@ -83,6 +89,7 @@ export default function HistoryExample() {
           <li>点击"撤销"回到上一步状态</li>
           <li>点击"重做"前进到下一步状态</li>
           <li>点击"重置到初始状态"回到最开始的状态</li>
+          <li>点击"清空历史"清空所有历史记录，无法再撤销或重做</li>
         </ul>
       </div>
     </div>
