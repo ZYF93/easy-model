@@ -320,6 +320,7 @@ easy-model includes a lightweight history tracker that records model changes and
 - `back()`: undo to the previous state
 - `forward()`: redo to the next state
 - `reset()`: restore the model to its initial state
+- `batch(fn: () => void)`: group multiple changes into a single history entry
 - `clear()`: clear all history records
 
 #### Example (history)

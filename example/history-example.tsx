@@ -71,6 +71,17 @@ export default function HistoryExample() {
           >
             重置到初始状态
           </button>
+          <button
+            onClick={() =>
+              history.batch(() => {
+                counter.increment();
+                counter.increment();
+              })
+            }
+            style={{ marginRight: "0.5rem" }}
+          >
+            批量 +2 并合并为一条历史
+          </button>
           <button onClick={() => history.clear()}>清空历史</button>
         </div>
         <div style={{ marginTop: "0.5rem" }}>
@@ -89,6 +100,7 @@ export default function HistoryExample() {
           <li>点击"撤销"回到上一步状态</li>
           <li>点击"重做"前进到下一步状态</li>
           <li>点击"重置到初始状态"回到最开始的状态</li>
+          <li>点击"批量 +2 并合并为一条历史"可将多个修改合并为一条记录</li>
           <li>点击"清空历史"清空所有历史记录，无法再撤销或重做</li>
         </ul>
       </div>

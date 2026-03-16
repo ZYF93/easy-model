@@ -20,6 +20,7 @@ export class History<T extends object> {
   }
 
   private current: HistoryItem = { data: [] };
+  private batching = false;
 
   get hasPrev() {
     return Boolean(this.current.prev);
@@ -31,16 +32,37 @@ export class History<T extends object> {
 
   stop?: () => void;
 
+  private isSamePath(pathA: (string | symbol)[], pathB: (string | symbol)[]) {
+    return (
+      pathA.length === pathB.length && pathA.every((k, i) => pathB[i] === k)
+    );
+  }
+
   private start() {
     this.stop?.();
     this.stop = watch(this.model, (path, value, newValue) => {
-      const prev = this.current;
-      this.current = {
-        prev,
-        data: [{ path, value: newValue }],
-      };
-      prev.next = this.current;
-      prev.data.push({ path, value });
+      if (this.batching) {
+        const prevData = this.current.prev!.data;
+        if (!prevData.some(obj => this.isSamePath(obj.path, path))) {
+          prevData.push({ path, value });
+        }
+        const curIdx = this.current.data.findIndex(obj =>
+          this.isSamePath(obj.path, path)
+        );
+        if (curIdx === -1) {
+          this.current.data.push({ path, value: newValue });
+        } else {
+          this.current.data[curIdx].value = newValue;
+        }
+      } else {
+        const prev = this.current;
+        this.current = {
+          prev,
+          data: [{ path, value: newValue }],
+        };
+        prev.next = this.current;
+        prev.data.push({ path, value });
+      }
     });
   }
 
@@ -85,6 +107,29 @@ export class History<T extends object> {
     }
     this.current = { data: [] };
     this.setValue(data.flat());
+  }
+
+  /**
+   * 批量修改状态记录到同一条历史里
+   */
+  batch(fn: () => void) {
+    this.batching = true;
+    const prev = this.current;
+    this.current = {
+      prev,
+      data: [],
+    };
+    prev.next = this.current;
+    try {
+      fn();
+    } catch (error) {
+      console.error(error);
+    }
+    if (!this.current.data.length) {
+      this.current = prev;
+      prev.next = undefined;
+    }
+    this.batching = false;
   }
 
   /**

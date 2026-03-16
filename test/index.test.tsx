@@ -645,6 +645,32 @@ describe("history", () => {
     expect(history.hasNext).toBe(false);
   });
 
+  it("should batch changes into a single history entry", () => {
+    class TestModel {
+      value = 0;
+    }
+
+    const Test = provide(TestModel);
+    const model = Test();
+    const history = collect(model);
+
+    history.batch(() => {
+      model.value = 1;
+      model.value = 2;
+    });
+
+    expect(model.value).toBe(2);
+    expect(history.hasPrev).toBe(true);
+
+    history.back();
+    expect(model.value).toBe(0);
+    expect(history.hasPrev).toBe(false);
+
+    history.forward();
+    expect(model.value).toBe(2);
+    expect(history.hasNext).toBe(false);
+  });
+
   it("should handle nested object changes", () => {
     class TestModel {
       obj = { a: 1, b: 2 };
