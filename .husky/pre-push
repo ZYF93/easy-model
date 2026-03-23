@@ -1,2 +1,2 @@
 pnpm build
-pnpm publish
+npm publish
