@@ -1,6 +1,7 @@
 import { FC, PropsWithChildren, ReactNode, Children } from "react";
 import { ZodType } from "zod";
 import { provide } from "./provide";
+import { getOrigin } from "./observe";
 
 /**
  * 构造函数容器，按命名空间存储 schema 到构造函数的映射
@@ -122,10 +123,11 @@ export function inject<T extends ZodType>(schema: T, namespace = "") {
     addInitializer(function (this: unknown) {
       Object.defineProperty(this, name, {
         get() {
-          if (!injectedVals.has(this)) {
-            injectedVals.set(this, {});
+          const t = getOrigin(this);
+          if (!injectedVals.has(t)) {
+            injectedVals.set(t, {});
           }
-          const records = injectedVals.get(this)!;
+          const records = injectedVals.get(t)!;
           if (!records[name]) {
             records[name] = { initialized: false, val: undefined };
           }
@@ -173,10 +175,11 @@ export function inject<T extends ZodType>(schema: T, namespace = "") {
       this: object,
       initVal: P
     ): P {
-      if (!injectedVals.has(this)) {
-        injectedVals.set(this, {});
+      const t = getOrigin(this);
+      if (!injectedVals.has(t)) {
+        injectedVals.set(t, {});
       }
-      const records = injectedVals.get(this)!;
+      const records = injectedVals.get(t)!;
       if (!records[name]) {
         records[name] = {
           initialized: false,
