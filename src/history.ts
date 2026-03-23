@@ -38,7 +38,7 @@ export class History<T extends object> {
     );
   }
 
-  private start() {
+  start() {
     this.stop?.();
     this.stop = watch(this.model, (path, value, newValue) => {
       if (this.batching) {
