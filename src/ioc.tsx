@@ -193,7 +193,7 @@ export function inject<T extends ZodType>(schema: T, namespace = "") {
  *
  * @param namespace - 要清理的命名空间
  */
-export function clearNamespace(namespace: string): void {
+export function clearNamespace(namespace = ""): void {
   delete ctorContainers[namespace];
   delete valContainers[namespace];
 }
