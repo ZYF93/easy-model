@@ -17,7 +17,7 @@ const schema2 = object({
 }).describe("Test类的schema");
 
 class Test {
-  xxx = 1;
+  constructor(public xxx: number) {}
 }
 class MFoo {
   @inject(schema)
@@ -31,7 +31,7 @@ class MFoo {
 config(
   <>
     <Container>
-      <CInjection schema={schema2} ctor={Test} />
+      <CInjection schema={schema2} ctor={Test} params={[1]} />
       <VInjection
         schema={schema}
         val={{

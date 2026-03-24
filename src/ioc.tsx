@@ -6,7 +6,10 @@ import { getOrigin } from "./observe";
 /**
  * 构造函数容器，按命名空间存储 schema 到构造函数的映射
  */
-const ctorContainers: Record<string, Map<ZodType, new () => unknown>> = {};
+const ctorContainers: Record<
+  string,
+  Map<ZodType, [new (...args: any[]) => unknown, unknown[]]>
+> = {};
 
 /**
  * 值容器，按命名空间存储 schema 到值的映射
@@ -34,7 +37,7 @@ let currentNS = "";
  */
 function getOrCreateCtorContainer(
   namespace: string
-): Map<ZodType, new () => unknown> {
+): Map<ZodType, [new (...args: any[]) => unknown, unknown[]]> {
   if (!ctorContainers[namespace]) {
     ctorContainers[namespace] = new Map();
   }
@@ -68,15 +71,32 @@ export const Container: FC<PropsWithChildren<{ namespace?: string }>> = ({
  *
  * @param schema - Zod schema，用于类型验证和作为依赖标识
  * @param ctor - 要注入的构造函数
+ * @param params - 给构造函数传入的参数
  */
 export function CInjection<
   T extends ZodType,
+  P extends new (...args: any[]) => ReturnType<T["parse"]>,
+>(props: { schema: T; ctor: P; params: ConstructorParameters<P> }): ReactNode;
+export function CInjection<
+  T extends ZodType,
   P extends new () => ReturnType<T["parse"]>,
->({ schema, ctor }: { schema: T; ctor: P }): ReactNode {
+>(props: { schema: T; ctor: P }): ReactNode;
+export function CInjection<
+  T extends ZodType,
+  P extends new (...args: any[]) => ReturnType<T["parse"]>,
+>({
+  schema,
+  ctor,
+  params,
+}: {
+  schema: T;
+  ctor: P;
+  params?: ConstructorParameters<P>;
+}): ReactNode {
   const vContainer = getOrCreateValContainer(currentNS);
   vContainer.delete(schema);
   const container = getOrCreateCtorContainer(currentNS);
-  container.set(schema, ctor);
+  container.set(schema, [ctor, params ?? []]);
   return null;
 }
 
@@ -143,9 +163,12 @@ export function inject<T extends ZodType>(schema: T, namespace = "") {
 
           // 尝试从构造函数容器获取
           let val: unknown;
-          const ctor = ctorContainers[namespace]?.get(schema);
+          const [ctor, param] = ctorContainers[namespace]?.get(schema) ?? [
+            undefined,
+            [],
+          ];
           if (ctor) {
-            val = provide(ctor)();
+            val = provide(ctor)(...param);
           } else {
             const valContainer = valContainers[namespace];
             if (valContainer?.has(schema)) {

@@ -247,6 +247,33 @@ describe("provide and IOC extras", () => {
     expect(isRegistered(schemaA, "ns_clear")).toBe(false);
   });
 
+  it("CInjection 支持传递构造函数参数", () => {
+    const schemaWithParams = object({ value: number() }).describe(
+      "schemaWithParams"
+    );
+    class WithParams {
+      constructor(public initial: number) {}
+      get value() {
+        return this.initial * 2;
+      }
+    }
+
+    config(
+      <Container>
+        <CInjection schema={schemaWithParams} ctor={WithParams} params={[10]} />
+      </Container>
+    );
+
+    expect(isRegistered(schemaWithParams)).toBe(true);
+
+    class Consumer {
+      @inject(schemaWithParams)
+      inst?: WithParams;
+    }
+    const consumer = provide(Consumer)();
+    expect(consumer.inst?.value).toBe(20);
+  });
+
   it("offWatch 装饰器能跳过对特定字段的监听", () => {
     class OffWatchTest {
       constructor(public name: string) {}

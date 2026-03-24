@@ -14,7 +14,7 @@
     "typescript"
   ],
   "description": "一个基于类模型和依赖注入的 React 状态管理库。",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "module": "./dist/index.es.js",
   "repository": {
     "type": "git",

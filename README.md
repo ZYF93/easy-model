@@ -221,12 +221,13 @@
   class MFoo {
     @inject(schema)
     bar?: { number: number };
-    baz?: number;
+    @inject(schema2)
+    qux?: { xxx: number };
   }
 
   config(
     <Container>
-      <CInjection schema={schema} ctor={Test} />
+      <CInjection schema={schema2} ctor={Test} />
       <VInjection schema={schema} val={{ number: 100 }} />
     </Container>
   );
