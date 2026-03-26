@@ -333,15 +333,15 @@ class AIAgentModel {
 
 ## 快速参考
 
-| 需求         | 解决方案                                                 |
-| ------------ | -------------------------------------------------------- |
-| 组件共享状态 | `useModel(ModelClass, [args])`                           |
-| 组件共享实例 | `provide(Model)` + `useInstance(Provider(...args))`      |
-| 异步加载状态 | `@loader.load()` + `useLoader()`                         |
-| 依赖注入     | `@inject(schema)` + `config(<Container>...)`             |
-| 撤销重做     | `useModelHistory(model)`                                 |
-| 监听变化     | `watch(model, callback)` / `useWatcher(model, callback)` |
-| 非响应字段   | `@offWatch` 装饰器                                       |
+| 需求         | 解决方案                                                                       |
+| ------------ | ------------------------------------------------------------------------------ |
+| 组件共享状态 | `useModel(ModelClass, [args])`                                                 |
+| 组件共享实例 | 直接用 `useModel(ModelClass, [args])` 即可共享实例（内部就是调用 useInstance） |
+| 异步加载状态 | `@loader.load()` + `useLoader()`                                               |
+| 依赖注入     | `@inject(schema)` + `config(<Container>...)`                                   |
+| 撤销重做     | `useModelHistory(model)`                                                       |
+| 监听变化     | `watch(model, callback)` / `useWatcher(model, callback)`                       |
+| 非响应字段   | `@offWatch` 装饰器                                                             |
 
 ## 注意事项
 

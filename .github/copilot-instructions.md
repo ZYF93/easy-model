@@ -37,10 +37,12 @@ Decorate non-reactive fields with `@offWatch` to exclude from observation. Prior
 
 ## React Integration
 
-- `useModel`: Creates/injects model instances.
+- `useModel`: Creates/injects model instances. Can also share instances when same args are used (internally calls useInstance).
 - `useInstance`: Subscribes to existing model instances.
 - `useWatcher`: Component-side effects with auto-cleanup.
 - `useLoader`: Access loading states for async methods.
+
+**Note**: Both can share instances. `useModel(ModelClass, [args])` with the same args automatically returns the same instance across components. It's a convenience wrapper around `useInstance`.
 
 ## Testing
 

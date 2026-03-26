@@ -81,8 +81,8 @@
   }
   ```
 
-- **跨组件通信：`useModel` + `useInstance`**  
-  通过 `CommunicateModel` + `provide`，让多个组件共享同一实例（按参数分组）：
+- **跨组件通信：直接用 `useModel` 即可共享实例**  
+  通过 `provide` 包装后，相同参数获取的是同一实例。`useModel` 内部就是调用 `useInstance`，两者都能实现跨组件共享：
 
   ```tsx
   import { provide, useModel, useInstance } from "easy-model";
@@ -97,6 +97,8 @@
 
   const CommunicateProvider = provide(CommunicateModel);
 
+  // 方式一：直接用 useModel（推荐）
+  // useModel 内部就是调用 useInstance，相同参数自动共享同一实例
   function CommunicateA() {
     const { value, random } = useModel(CommunicateModel, ["channel"]);
     return (
@@ -107,10 +109,14 @@
     );
   }
 
+  // 方式二：用 useInstance 订阅已有实例（效果一样）
   function CommunicateB() {
-    const { value } = useInstance(CommunicateProvider("channel")); // 这里用useModel也可以，这里是演示一下useInstance的使用方法
+    const { value } = useInstance(CommunicateProvider("channel"));
     return <div>组件 B：{value}</div>;
   }
+
+  // 注意：上面两种方式效果完全相同，都是获取 ["channel"] 参数对应的实例
+  // useModel 内部就是调用了 useInstance
   ```
 
 - **独立监听：`watch`**  

@@ -16,11 +16,18 @@ This FAQ collects common questions when using easy-model, with suggested solutio
 
 **Recommended usage:**
 
-- Always get instances via `useModel` / `useInstance`:
+- Always get instances via `useModel` or `useInstance`:
+- Just use `useModel(ModelClass, [args])` to share instances across components (internally calls useInstance)
 
 ```tsx
-const { count } = useModel(CounterModel, []);
-return <div>{count}</div>;
+// Method 1: Just use useModel (recommended)
+const model = useModel(CounterModel, []);
+// Same args automatically share the same instance
+return <div>{model.count}</div>;
+
+// Method 2: use useInstance
+const model = useInstance(existingModel);
+return <div>{model.count}</div>;
 ```
 
 ---

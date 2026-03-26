@@ -11,18 +11,22 @@
 **可能原因：**
 
 - 没有通过 `useModel` / `useInstance` 获取实例，而是手动 `new` 了一个 model。
-- 在组件中对 model 做了“脱离响应式”的解构，例如：
-  - `const { count } = useModel(CounterModel, []);` 然后后续只用 `count`。
-  - 这样之后即使 model 内部 `count` 更新，组件也不会感知到。
-- 修改的是一个普通对象，而不是 model 中被代理的字段（例如把外部对象直接挂在 model 上并原地修改）。
+- 修改的是一个普通对象，而不是 model 中被代理的字段（例如通过@offWatch装饰的对象）。
 
 **建议写法：**
 
-- 始终通过 `useModel` / `useInstance` 获取实例：
+- 始终通过 `useModel` 或 `useInstance` 获取实例：
+- 直接用 `useModel(ModelClass, [args])` 即可实现跨组件共享（内部就是调用 useInstance）
 
 ```tsx
-const { count } = useModel(CounterModel, []);
-return <div>{count}</div>;
+// 方式一：直接用 useModel（推荐）
+const model = useModel(CounterModel, []);
+// 相同参数会自动共享实例
+return <div>{model.count}</div>;
+
+// 方式二：用 useInstance
+const model = useInstance(existingModel);
+return <div>{model.count}</div>;
 ```
 
 ---

@@ -106,7 +106,11 @@ class CounterModel {
 
 - **适合场景**
   - 组件需要一个 **与组件生命周期相关** 的 model 实例，或按参数区分的多实例（如不同 tab 的 model）。
-  - 跨组件共享 model 实例时
+  - 跨组件共享 model 实例时（相同参数自动共享）
+
+- **核心原理**
+  - `useModel(Ctor, [args])` 内部会调用 `provide(Ctor)` 创建一个 Provider，然后用相同 `args` 调用 Provider 会返回同一个实例。
+  - 因此直接用 `useModel(ModelClass, [args])` 即可实现跨组件共享，**无需额外使用 useInstance**。
 
 - **使用要点**
   - `useModel` 第一个参数是 model 类，第二个参数（可选）用于构造函数参数或区分 key。
@@ -136,31 +140,40 @@ function CounterView2() {
 - **最佳实践**
   - 在组件中**只调用公开方法 / 读取公开字段**，不要在组件里拼装业务逻辑。
 
-### 4.2 `provide` + `useInstance`：共享实例
+### 4.2 跨组件共享实例
 
-- **适合场景**
-  - 同一个 model 实例需要共享（例如跨区域通信、全局设置、系统状态等）。
+- **核心原理**
+  - `useModel(ModelClass, [args])` 内部就是调用 `useInstance`！
+  - 相同参数 (`args`) 会自动获取同一个实例，实现跨组件共享。
+  - 因此直接用 `useModel` 即可共享实例，无需额外操作。
 
-- **使用模式**
+- **使用方式（任选其一，效果相同）**
 
 ```ts
-// 定义 Provider 以及创建实例
-const globalConfig = provide(GlobalConfigModel)("global");
-
-// 组件 A：使用实例
-function ConfigPanel() {
-  const model = useInstance(globalConfig);
+// 方式一：直接用 useModel（推荐，最简洁）
+// 相同参数 ["global"] 自动共享同一实例
+function ComponentA() {
+  const model = useModel(GlobalConfigModel, ["global"]);
   // ...
 }
 
-// 组件 B：复用同一实例
-function AnotherComponent() {
-  const model = useInstance(globalConfig);
+function ComponentB() {
+  const model = useModel(GlobalConfigModel, ["global"]); // 同样的参数，获取同一实例
   // ...
 }
 
-// 非组件中复用同一实例
-if (!globalConfig.ready) globalConfig.loadConf(); // ...
+// 方式二：用 provide + useInstance（效果一样）
+const GlobalConfigProvider = provide(GlobalConfigModel);
+
+function ComponentA() {
+  const model = useInstance(GlobalConfigProvider("global"));
+  // ...
+}
+
+function ComponentB() {
+  const model = useInstance(GlobalConfigProvider("global"));
+  // ...
+}
 ```
 
 - **最佳实践**

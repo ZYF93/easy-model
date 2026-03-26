@@ -129,10 +129,12 @@ services → models → pages → components
 
 ### React Integration Patterns
 
-- `useModel(ModelClass, [...args])`: Create/inject model instance
+- `useModel(ModelClass, [...args])`: Create/inject model instance (internally calls useInstance)
 - `useInstance(ModelInstance)`: Subscribe to existing instance
 - `useWatcher(fn)`: Component-side effects with auto-cleanup
 - `useLoader()`: Access loading states for async methods
+
+**Note**: Both `useModel` and `useInstance` can share instances. Using the same `args` in `useModel` automatically shares the same instance across components. `useModel` is a convenience wrapper around `useInstance`.
 
 ---
 
