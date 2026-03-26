@@ -130,7 +130,7 @@ services → models → pages → components
 ### React Integration Patterns
 
 - `useModel(ModelClass, [...args])`: Create/inject model instance
-- `useInstance(ModelClass)`: Subscribe to existing instance
+- `useInstance(ModelInstance)`: Subscribe to existing instance
 - `useWatcher(fn)`: Component-side effects with auto-cleanup
 - `useLoader()`: Access loading states for async methods
 
@@ -142,8 +142,6 @@ services → models → pages → components
 
 - **DO**: Use `useModel`/`useInstance` to access models
 - **DO**: Access model fields via instance (e.g., `model.count`)
-- **DON'T**: Destructure model fields (breaks reactivity)
-- **DON'T**: Pass model methods directly to child components
 
 ### Watchers
 
@@ -195,10 +193,21 @@ pnpm test -- run -t "should load user"
 - [ARCHITECTURE.md](./docs/ARCHITECTURE.md) - Architecture and project structure
 - [GUIDE.md](./docs/GUIDE.md) - Usage patterns and API reference
 - [COOKBOOK.md](./docs/COOKBOOK.md) - Common recipes and examples
+- [AI-AGENT.md](./AI-AGENT.md) - AI Agent usage guide for code generation
 
 ---
 
-## 7. Pre-Commit Requirements
+## 7. AI Agent Usage
+
+For AI coding assistants (Cursor, Copilot, etc.), see [AI-AGENT.md](./AI-AGENT.md) for:
+
+- Quick start patterns
+- Common templates (CRUD, forms, pagination, AI agents)
+- Code examples for all use cases
+
+---
+
+## 8. Pre-Commit Requirements
 
 Before committing:
 
