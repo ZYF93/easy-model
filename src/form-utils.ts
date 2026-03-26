@@ -1,3 +1,5 @@
+import { FC } from "react";
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 Symbol.metadata ??= Symbol.for("metadata");
@@ -10,14 +12,32 @@ export type FormProp = {
   permission: number;
   dependsOn(...args: any[]): boolean;
   fieldConfig: {
-    type: "input" | "textarea" | "select" | "checkbox" | "radio";
+    type:
+      | FC<
+          {
+            value: unknown;
+            onChange: (value: unknown) => void;
+            options?: unknown[];
+          } & Record<string, unknown>
+        >
+      | string;
     width: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getOptions?(): any[] | Promise<any[]>;
-  };
+  } & Record<string, unknown>;
   placeholder?: string;
   name: string | symbol;
 };
+
+export interface Dec {
+  (_: unknown, ctx: ClassFieldDecoratorContext<unknown, unknown>): void;
+  prop(name: string): Dec;
+  validate(validator: FormProp["validate"]): Dec;
+  required(isRequired?: boolean): Dec;
+  readonly(isReadonly?: boolean): Dec;
+  permission(code: number): Dec;
+  dependsOn(fn: FormProp["dependsOn"]): Dec;
+  config(fieldConfig: FormProp["fieldConfig"]): Dec;
+  placeholder(text: string): Dec;
+}
 
 const symbol = Symbol();
 
@@ -35,7 +55,7 @@ function createUtils(
     },
     name: "",
   }
-) {
+): Dec {
   function dec(
     _: unknown,
     { name, metadata, static: isStatic, kind }: ClassFieldDecoratorContext

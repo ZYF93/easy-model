@@ -89,7 +89,9 @@ function FormField({ prop }: { prop: formUtils.FormProp }) {
 
   const [options, setOptions] = useState<string[]>([]);
   async function getOptions() {
-    setOptions((await fieldConfig.getOptions?.()) || []);
+    setOptions(
+      (await (fieldConfig.getOptions as () => Promise<string[]>)?.()) || []
+    );
   }
   useEffect(() => {
     getOptions();
