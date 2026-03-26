@@ -419,10 +419,10 @@ stop();
 Use decorators to define form field metadata, including validation, permissions, dependencies, etc.
 
 ```ts
-import { forUtils } from "easy-model";
+import { formUtils } from "easy-model";
 
 class AdvancedFormModel {
-  @(forUtils
+  @(formUtils
     .prop("Username")
     .required()
     .validate(value => {
@@ -438,7 +438,7 @@ class AdvancedFormModel {
     .placeholder("Enter username"))
   username = "";
 
-  @(forUtils
+  @(formUtils
     .prop("Email")
     .required()
     .validate(value => {
@@ -452,7 +452,7 @@ class AdvancedFormModel {
     .placeholder("Enter email"))
   email = "";
 
-  @(forUtils
+  @(formUtils
     .prop("Age")
     .validate(value => {
       if (typeof value !== "number" || value < 0 || value > 120) {
@@ -464,10 +464,10 @@ class AdvancedFormModel {
     .placeholder("Enter age"))
   age = 0;
 
-  @(forUtils.prop("Admin").config({ type: "checkbox", width: "auto" }))
+  @(formUtils.prop("Admin").config({ type: "checkbox", width: "auto" }))
   isAdmin = false;
 
-  @(forUtils
+  @(formUtils
     .prop("Admin Code")
     .dependsOn(function (this: AdvancedFormModel) {
       return this.isAdmin; // Only show when isAdmin is true
@@ -477,7 +477,7 @@ class AdvancedFormModel {
     .placeholder("Admin code"))
   adminCode = "";
 
-  @(forUtils
+  @(formUtils
     .prop("Role")
     .permission(1)
     .config({
@@ -487,7 +487,7 @@ class AdvancedFormModel {
     }))
   role = "user";
 
-  @(forUtils
+  @(formUtils
     .prop("Description")
     .readonly()
     .config({ type: "textarea", width: "100%" })
@@ -496,7 +496,7 @@ class AdvancedFormModel {
 
   // Get form configuration
   static getFormProps() {
-    return forUtils.getProps(AdvancedFormModel);
+    return formUtils.getProps(AdvancedFormModel);
   }
 }
 ```

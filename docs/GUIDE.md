@@ -330,26 +330,26 @@ function LoaderDemo() {
 
 ## 11. 表单工具（form-utils）
 
-easy-model 提供了基于装饰器的表单字段配置工具集，帮助你在模型类中声明式地定义表单字段的元信息（如验证规则、权限、依赖关系等），并通过 `forUtils.getProps` 函数提取这些配置用于表单渲染。
+easy-model 提供了基于装饰器的表单字段配置工具集，帮助你在模型类中声明式地定义表单字段的元信息（如验证规则、权限、依赖关系等），并通过 `formUtils.getProps` 函数提取这些配置用于表单渲染。
 
 ### 11.1 核心装饰器
 
-- **`@forUtils.prop(name)`**：设置字段的显示名称。
-- **`@forUtils.required()`**：标记为必填字段。
-- **`@forUtils.validate(fn)`**：设置验证函数，返回 `{ valid: boolean; message?: string }`。
-- **`@forUtils.readonly()`**：标记为只读字段。
-- **`@forUtils.permission(code)`**：设置权限代码。
-- **`@forUtils.dependsOn(fn)`**：设置依赖条件函数，决定字段是否显示/启用。
-- **`@forUtils.config(fieldConfig)`**：设置字段UI配置（如类型、宽度、选项等）。
-- **`@forUtils.placeholder(text)`**：设置占位符文本。
+- **`@formUtils.prop(name)`**：设置字段的显示名称。
+- **`@formUtils.required()`**：标记为必填字段。
+- **`@formUtils.validate(fn)`**：设置验证函数，返回 `{ valid: boolean; message?: string }`。
+- **`@formUtils.readonly()`**：标记为只读字段。
+- **`@formUtils.permission(code)`**：设置权限代码。
+- **`@formUtils.dependsOn(fn)`**：设置依赖条件函数，决定字段是否显示/启用。
+- **`@formUtils.config(fieldConfig)`**：设置字段UI配置（如类型、宽度、选项等）。
+- **`@formUtils.placeholder(text)`**：设置占位符文本。
 
 ### 11.2 使用示例
 
 ```ts
-import { forUtils } from "easy-model";
+import { formUtils } from "easy-model";
 
 class UserFormModel {
-  @(forUtils
+  @(formUtils
     .prop("用户名")
     .required()
     .validate(value => {
@@ -362,7 +362,7 @@ class UserFormModel {
     .placeholder("请输入用户名"))
   username = "";
 
-  @(forUtils
+  @(formUtils
     .prop("邮箱")
     .required()
     .validate(value => {
@@ -376,7 +376,7 @@ class UserFormModel {
     .placeholder("请输入邮箱"))
   email = "";
 
-  @(forUtils
+  @(formUtils
     .prop("年龄")
     .validate(value => {
       if (typeof value !== "number" || value < 0 || value > 120) {
@@ -388,10 +388,10 @@ class UserFormModel {
     .placeholder("请输入年龄"))
   age = 0;
 
-  @(forUtils.prop("管理员").config({ type: "checkbox", width: "auto" }))
+  @(formUtils.prop("管理员").config({ type: "checkbox", width: "auto" }))
   isAdmin = false;
 
-  @(forUtils
+  @(formUtils
     .prop("管理员代码")
     .dependsOn(function (this: UserFormModel) {
       return this.isAdmin; // 仅在 isAdmin 为 true 时显示
@@ -401,7 +401,7 @@ class UserFormModel {
     .placeholder("管理员代码"))
   adminCode = "";
 
-  @(forUtils
+  @(formUtils
     .prop("角色")
     .permission(1)
     .config({
@@ -411,7 +411,7 @@ class UserFormModel {
     }))
   role = "user";
 
-  @(forUtils
+  @(formUtils
     .prop("描述")
     .readonly()
     .config({ type: "textarea", width: "100%" })
@@ -420,7 +420,7 @@ class UserFormModel {
 }
 
 // 获取表单配置
-const formProps = forUtils.getProps(UserFormModel);
+const formProps = formUtils.getProps(UserFormModel);
 ```
 
 ### 11.3 在组件中使用

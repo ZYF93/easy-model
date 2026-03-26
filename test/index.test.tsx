@@ -16,7 +16,7 @@ import {
   useLoader,
   clearNamespace,
   offWatch,
-  forUtils,
+  formUtils,
   useModelHistory,
   collect,
 } from "../src";
@@ -501,10 +501,10 @@ describe("hooks", () => {
 describe("form-utils", () => {
   it("should create form props with decorators", () => {
     class FormModel {
-      @(forUtils.prop("name").required())
+      @(formUtils.prop("name").required())
       name = "";
 
-      @(forUtils
+      @(formUtils
         .prop("age")
         .validate(v =>
           typeof v === "number"
@@ -513,17 +513,17 @@ describe("form-utils", () => {
         ))
       age = 0;
 
-      @(forUtils.prop("email").readonly())
+      @(formUtils.prop("email").readonly())
       email = "";
 
-      @(forUtils.prop("role").permission(1))
+      @(formUtils.prop("role").permission(1))
       role = "user";
 
-      @(forUtils.prop("description").placeholder("Enter description"))
+      @(formUtils.prop("description").placeholder("Enter description"))
       description = "";
     }
 
-    const props = forUtils.getProps(FormModel);
+    const props = formUtils.getProps(FormModel);
 
     expect(props).toHaveLength(5);
 
@@ -553,16 +553,16 @@ describe("form-utils", () => {
 
   it("should support dependsOn decorator", () => {
     class FormModel {
-      @(forUtils.prop("isAdmin").required())
+      @(formUtils.prop("isAdmin").required())
       isAdmin = false;
 
-      @(forUtils.prop("adminCode").dependsOn(function (this: FormModel) {
+      @(formUtils.prop("adminCode").dependsOn(function (this: FormModel) {
         return this.isAdmin;
       }))
       adminCode = "";
     }
 
-    const props = forUtils.getProps(FormModel);
+    const props = formUtils.getProps(FormModel);
     const adminCodeProp = props.find(p => p.name === "adminCode");
     expect(adminCodeProp!.dependsOn.call({ isAdmin: true })).toBe(true);
     expect(adminCodeProp!.dependsOn.call({ isAdmin: false })).toBe(false);
@@ -570,10 +570,10 @@ describe("form-utils", () => {
 
   it("should support config decorator for field types", () => {
     class FormModel {
-      @(forUtils.prop("username").config({ type: "input", width: "50%" }))
+      @(formUtils.prop("username").config({ type: "input", width: "50%" }))
       username = "";
 
-      @(forUtils.prop("gender").config({
+      @(formUtils.prop("gender").config({
         type: "select",
         width: "100%",
         getOptions: () => ["male", "female"],
@@ -581,7 +581,7 @@ describe("form-utils", () => {
       gender = "";
     }
 
-    const props = forUtils.getProps(FormModel);
+    const props = formUtils.getProps(FormModel);
     const usernameProp = props.find(p => p.name === "username");
     expect(usernameProp!.fieldConfig.type).toBe("input");
     expect(usernameProp!.fieldConfig.width).toBe("50%");

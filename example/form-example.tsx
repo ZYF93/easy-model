@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { forUtils } from "../src";
+import { formUtils } from "../src";
 
 // 定义表单模型，使用装饰器配置字段
 class UserFormModel {
-  @(forUtils
+  @(formUtils
     .prop("username")
     .required()
     .validate(value => {
@@ -16,7 +16,7 @@ class UserFormModel {
     .placeholder("请输入用户名"))
   username = "";
 
-  @(forUtils
+  @(formUtils
     .prop("email")
     .required()
     .validate(value => {
@@ -30,7 +30,7 @@ class UserFormModel {
     .placeholder("请输入邮箱"))
   email = "";
 
-  @(forUtils
+  @(formUtils
     .prop("age")
     .validate(value => {
       if (typeof value !== "number" || value < 0 || value > 120) {
@@ -42,10 +42,10 @@ class UserFormModel {
     .placeholder("请输入年龄"))
   age = 0;
 
-  @(forUtils.prop("isAdmin").config({ type: "checkbox", width: "auto" }))
+  @(formUtils.prop("isAdmin").config({ type: "checkbox", width: "auto" }))
   isAdmin = false;
 
-  @(forUtils
+  @(formUtils
     .prop("adminCode")
     .dependsOn(function (this: UserFormModel) {
       return this.isAdmin;
@@ -55,7 +55,7 @@ class UserFormModel {
     .placeholder("管理员代码"))
   adminCode = "";
 
-  @(forUtils
+  @(formUtils
     .prop("role")
     .permission(1)
     .config({
@@ -65,7 +65,7 @@ class UserFormModel {
     }))
   role = "user";
 
-  @(forUtils
+  @(formUtils
     .prop("description")
     .readonly()
     .config({ type: "textarea", width: "100%" })
@@ -74,10 +74,10 @@ class UserFormModel {
 }
 
 // 获取表单配置
-const formProps = forUtils.getProps(UserFormModel);
+const formProps = formUtils.getProps(UserFormModel);
 
 // 简单的表单渲染组件（演示用）
-function FormField({ prop }: { prop: forUtils.FormProp }) {
+function FormField({ prop }: { prop: formUtils.FormProp }) {
   const {
     name,
     prop: fieldName,

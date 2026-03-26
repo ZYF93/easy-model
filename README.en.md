@@ -246,22 +246,22 @@ easy-model provides a decorator-based form field metadata toolkit that helps you
 
 #### Core API
 
-- **`@forUtils.prop(name)`**: Sets the display name for the field.
-- **`@forUtils.required()`**: Marks the field as required.
-- **`@forUtils.validate(fn)`**: Provides a validation function returning `{ valid: boolean; message?: string }`.
-- **`@forUtils.readonly()`**: Marks the field as read-only.
-- **`@forUtils.permission(code)`**: Sets a permission code.
-- **`@forUtils.dependsOn(fn)`**: Sets a conditional function that controls whether the field is active.
-- **`@forUtils.config(fieldConfig)`**: Sets UI-related configuration (type, width, options, etc.).
-- **`@forUtils.placeholder(text)`**: Sets placeholder text.
+- **`@formUtils.prop(name)`**: Sets the display name for the field.
+- **`@formUtils.required()`**: Marks the field as required.
+- **`@formUtils.validate(fn)`**: Provides a validation function returning `{ valid: boolean; message?: string }`.
+- **`@formUtils.readonly()`**: Marks the field as read-only.
+- **`@formUtils.permission(code)`**: Sets a permission code.
+- **`@formUtils.dependsOn(fn)`**: Sets a conditional function that controls whether the field is active.
+- **`@formUtils.config(fieldConfig)`**: Sets UI-related configuration (type, width, options, etc.).
+- **`@formUtils.placeholder(text)`**: Sets placeholder text.
 
 #### Example (form-utils)
 
 ```tsx
-import { forUtils } from "easy-model";
+import { formUtils } from "easy-model";
 
 class UserFormModel {
-  @(forUtils
+  @(formUtils
     .prop("username")
     .required()
     .validate(value => {
@@ -277,7 +277,7 @@ class UserFormModel {
     .placeholder("Enter username"))
   username = "";
 
-  @(forUtils
+  @(formUtils
     .prop("email")
     .required()
     .validate(value => {
@@ -291,7 +291,7 @@ class UserFormModel {
     .placeholder("Enter email"))
   email = "";
 
-  @(forUtils
+  @(formUtils
     .prop("role")
     .permission(1)
     .config({
@@ -302,7 +302,7 @@ class UserFormModel {
   role = "user";
 }
 
-const formProps = forUtils.getProps(UserFormModel);
+const formProps = formUtils.getProps(UserFormModel);
 ```
 
 ### History tracking (`history`)

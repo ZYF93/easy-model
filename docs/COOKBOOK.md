@@ -421,10 +421,10 @@ stop();
 使用装饰器定义表单字段的元信息，包括验证、权限、依赖关系等。
 
 ```ts
-import { forUtils } from "easy-model";
+import { formUtils } from "easy-model";
 
 class AdvancedFormModel {
-  @(forUtils。prop("用户名")
+  @(formUtils。prop("用户名")
     .required()
     .validate(value => {
       if (typeof value !== "string" || value.length < 3) {
@@ -436,7 +436,7 @@ class AdvancedFormModel {
     .placeholder("请输入用户名"))
   username = "";
 
-  @(forUtils.prop("邮箱")
+  @(formUtils.prop("邮箱")
     .required()
     .validate(value => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -449,7 +449,7 @@ class AdvancedFormModel {
     .placeholder("请输入邮箱"))
   email = "";
 
-  @(forUtils.prop("年龄")
+  @(formUtils.prop("年龄")
     .validate(value => {
       if (typeof value !== "number" || value < 0 || value > 120) {
         return { valid: false, message: "年龄必须在0-120之间" };
@@ -460,10 +460,10 @@ class AdvancedFormModel {
     .placeholder("请输入年龄"))
   age = 0;
 
-  @(forUtils.prop("管理员").config({ type: "checkbox", width: "auto" }))
+  @(formUtils.prop("管理员").config({ type: "checkbox", width: "auto" }))
   isAdmin = false;
 
-  @(forUtils.prop("管理员代码")
+  @(formUtils.prop("管理员代码")
     .dependsOn(function (this: AdvancedFormModel) {
       return this.isAdmin; // 仅在 isAdmin 为 true 时显示
     })
@@ -472,7 +472,7 @@ class AdvancedFormModel {
     .placeholder("管理员代码"))
   adminCode = "";
 
-  @(forUtils.prop("角色")
+  @(formUtils.prop("角色")
     .permission(1)
     .config({
       type: "select",
@@ -481,7 +481,7 @@ class AdvancedFormModel {
     }))
   role = "user";
 
-  @(forUtils.prop("描述")
+  @(formUtils.prop("描述")
     .readonly()
     .config({ type: "textarea", width: "100%" })
     .placeholder("描述"))
@@ -489,7 +489,7 @@ class AdvancedFormModel {
 
   // 获取表单配置
   static getFormProps() {
-    return forUtils.getProps(AdvancedFormModel);
+    return formUtils.getProps(AdvancedFormModel);
   }
 }
 ```

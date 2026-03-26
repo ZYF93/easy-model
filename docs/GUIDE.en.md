@@ -314,26 +314,26 @@ function LoaderDemo() {
 
 ## 11. Form utilities (form-utils)
 
-easy-model provides a decorator-based form field metadata toolkit that helps you declare form field configuration (validation, permission, dependencies, etc.) directly on your model class and extract it via `forUtils.getProps` for rendering.
+easy-model provides a decorator-based form field metadata toolkit that helps you declare form field configuration (validation, permission, dependencies, etc.) directly on your model class and extract it via `formUtils.getProps` for rendering.
 
 ### 11.1 Core decorators
 
-- **`@forUtils.prop(name)`**: Sets the display name for the field.
-- **`@forUtils.required()`**: Marks the field as required.
-- **`@forUtils.validate(fn)`**: Provides a validation function returning `{ valid: boolean; message?: string }`.
-- **`@forUtils.readonly()`**: Marks the field as read-only.
-- **`@forUtils.permission(code)`**: Sets a permission code.
-- **`@forUtils.dependsOn(fn)`**: Sets a conditional function that controls whether the field is active.
-- **`@forUtils.config(fieldConfig)`**: Sets UI-related configuration (type, width, options, etc.).
-- **`@forUtils.placeholder(text)`**: Sets placeholder text.
+- **`@formUtils.prop(name)`**: Sets the display name for the field.
+- **`@formUtils.required()`**: Marks the field as required.
+- **`@formUtils.validate(fn)`**: Provides a validation function returning `{ valid: boolean; message?: string }`.
+- **`@formUtils.readonly()`**: Marks the field as read-only.
+- **`@formUtils.permission(code)`**: Sets a permission code.
+- **`@formUtils.dependsOn(fn)`**: Sets a conditional function that controls whether the field is active.
+- **`@formUtils.config(fieldConfig)`**: Sets UI-related configuration (type, width, options, etc.).
+- **`@formUtils.placeholder(text)`**: Sets placeholder text.
 
 ### 11.2 Usage example
 
 ```ts
-import { forUtils } from "easy-model";
+import { formUtils } from "easy-model";
 
 class UserFormModel {
-  @(forUtils
+  @(formUtils
     .prop("Username")
     .required()
     .validate(value => {
@@ -349,7 +349,7 @@ class UserFormModel {
     .placeholder("Enter username"))
   username = "";
 
-  @(forUtils
+  @(formUtils
     .prop("Email")
     .required()
     .validate(value => {
@@ -363,7 +363,7 @@ class UserFormModel {
     .placeholder("Enter email"))
   email = "";
 
-  @(forUtils
+  @(formUtils
     .prop("Age")
     .validate(value => {
       if (typeof value !== "number" || value < 0 || value > 120) {
@@ -375,10 +375,10 @@ class UserFormModel {
     .placeholder("Enter age"))
   age = 0;
 
-  @(forUtils.prop("Admin").config({ type: "checkbox", width: "auto" }))
+  @(formUtils.prop("Admin").config({ type: "checkbox", width: "auto" }))
   isAdmin = false;
 
-  @(forUtils
+  @(formUtils
     .prop("Admin Code")
     .dependsOn(function (this: UserFormModel) {
       return this.isAdmin; // Only show when isAdmin is true
@@ -388,7 +388,7 @@ class UserFormModel {
     .placeholder("Admin code"))
   adminCode = "";
 
-  @(forUtils
+  @(formUtils
     .prop("Role")
     .permission(1)
     .config({
@@ -398,7 +398,7 @@ class UserFormModel {
     }))
   role = "user";
 
-  @(forUtils
+  @(formUtils
     .prop("Description")
     .readonly()
     .config({ type: "textarea", width: "100%" })
@@ -407,7 +407,7 @@ class UserFormModel {
 }
 
 // Get form configuration
-const formProps = forUtils.getProps(UserFormModel);
+const formProps = formUtils.getProps(UserFormModel);
 ```
 
 ### 11.3 Using in components
