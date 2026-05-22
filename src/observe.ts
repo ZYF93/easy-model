@@ -65,12 +65,12 @@ export function observe<T extends object>(target: T): T {
       return ret;
     },
     set(t, p, nv, r) {
-      if (offWatchKeys.get(getOrigin(t))?.includes(p)) return true;
       let ov = Reflect.get(t, p, r);
       ov = getOrigin(ov);
       nv = getOrigin(nv);
       if (ov === nv) return true;
       const ret = Reflect.set(t, p, nv, r);
+      if (offWatchKeys.get(getOrigin(t))?.includes(p)) return true;
       if (ret) {
         if (cachedUnWatch[p]) {
           cachedUnWatch[p]();
