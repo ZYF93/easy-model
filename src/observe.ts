@@ -47,7 +47,7 @@ export function observe<T extends object>(target: T): T {
       let ret: unknown = safeGet(t, p);
       if (ret) return ret;
       ret = Reflect.get(t, p, r);
-      if (typeof ret === "function") {
+      if (typeof ret === "function" && typeof ret.bind === "function") {
         if (!cachedFns[p]) {
           cachedFns[p] = ret.bind(observe(t));
         }
